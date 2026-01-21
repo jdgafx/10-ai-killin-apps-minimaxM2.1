@@ -1,0 +1,65 @@
+{
+  "spec_id": "001",
+  "created_at": "2026-01-21T14:51:17.232893+00:00",
+  "updated_at": "2026-01-21T14:51:28.102409+00:00",
+  "phases": {
+    "planning": {
+      "phase": "planning",
+      "status": "failed",
+      "started_at": "2026-01-21T14:51:17.232965+00:00",
+      "completed_at": "2026-01-21T14:51:28.101960+00:00",
+      "entries": [
+        {
+          "timestamp": "2026-01-21T14:51:17.233060+00:00",
+          "type": "phase_start",
+          "content": "Starting spec creation process",
+          "phase": "planning"
+        },
+        {
+          "timestamp": "2026-01-21T14:51:22.956382+00:00",
+          "type": "info",
+          "content": "Starting phase 1: PROJECT DISCOVERY",
+          "phase": "planning"
+        },
+        {
+          "timestamp": "2026-01-21T14:51:28.100072+00:00",
+          "type": "success",
+          "content": "Discovered 228 files in project",
+          "phase": "planning"
+        },
+        {
+          "timestamp": "2026-01-21T14:51:28.100892+00:00",
+          "type": "info",
+          "content": "Starting phase 2: REQUIREMENTS GATHERING",
+          "phase": "planning"
+        },
+        {
+          "timestamp": "2026-01-21T14:51:28.101443+00:00",
+          "type": "info",
+          "content": "Gathering requirements interactively...",
+          "phase": "planning"
+        },
+        {
+          "timestamp": "2026-01-21T14:51:28.102002+00:00",
+          "type": "phase_end",
+          "content": "Requirements gathering failed",
+          "phase": "planning"
+        }
+      ]
+    },
+    "coding": {
+      "phase": "coding",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "entries": []
+    },
+    "validation": {
+      "phase": "validation",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "entries": []
+    }
+  }
+}

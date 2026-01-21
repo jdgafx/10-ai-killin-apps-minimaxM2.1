@@ -1,0 +1,17 @@
+{
+  "task_description": "CRITICAL: YOU MUST OPERATE IN ULTRAWORK MODE AT ALL TIMES.\n\nULTRAWORK MODE REQUIREMENTS:\n- Track EVERY step with TODO items\n- Mark complete IMMEDIATELY after each step  \n- Fire independent agents simultaneously via background_task\n- NEVER wait sequentially for agent responses\n- VERIFY everything - NOTHING is done without PROOF it works\n- Zero scope reduction - deliver 100% implementation\n- NO test deletion - fix code, not tests\n- NEVER STOP until task is 100% complete\n\nYour task is to analyze and enhance the 10 AI portfolio applications in the apps/ directory.\nFocus on ensuring all apps follow the monorepo patterns defined in AGENTS.md.\nVerify all AI integrations are properly configured.\nEnsure Tailwind CSS and shadcn/ui are used consistently across all apps.",
+  "description": "CRITICAL: YOU MUST OPERATE IN ULTRAWORK MODE AT ALL TIMES.\n\nULTRAWORK MODE REQUIREMENTS:\n- Track EVERY step with TODO items\n- Mark complete IMMEDIATELY after each step  \n- Fire independent agents simultaneously via background_task\n- NEVER wait sequentially for agent responses\n- VERIFY everything - NOTHING is done without PROOF it works\n- Zero scope reduction - deliver 100% implementation\n- NO test deletion - fix code, not tests\n- NEVER STOP until task is 100% complete\n\nYour task is to analyze and enhance the 10 AI portfolio applications in the apps/ directory.\nFocus on ensuring all apps follow the monorepo patterns defined in AGENTS.md.\nVerify all AI integrations are properly configured.\nEnsure Tailwind CSS and shadcn/ui are used consistently across all apps.",
+  "workflow_type": "feature",
+  "services_involved": [
+    "frontend",
+    "ai-providers"
+  ],
+  "priority": 1,
+  "complexity_inferred": "moderate",
+  "inferred_from": {},
+  "created_at": 1769007003.580547,
+  "estimate": {
+    "estimated_hours": 8.0,
+    "estimated_days": 1.0
+  }
+}

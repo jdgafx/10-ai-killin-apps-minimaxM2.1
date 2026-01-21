@@ -1,15 +1,41 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.local
+
+# Environment files
 .env
 .env.local
-.DS_Store
-*.log
+.env.*.local
+*.local
 
-# Auto Claude generated files
-.auto-claude/
-.auto-claude-security.json
-.auto-claude-status
-.claude_settings.json
-.worktrees/
-.security-key
-logs/security/
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Auto-Claude (Python-based, separate from Node.js project)
+auto-claude/__pycache__/
+auto-claude/*.pyc
+auto-claude/venv/
+auto-claude/.env
+
+# Test coverage
+coverage/
+
+# Misc
+*.tgz
+.cache/

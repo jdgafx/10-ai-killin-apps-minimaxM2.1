@@ -1,0 +1,646 @@
+{
+  "project_root": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1",
+  "project_type": "monorepo",
+  "services": {
+    "auto-claude": {
+      "name": "auto-claude",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/auto-claude",
+      "language": "Python",
+      "framework": null,
+      "type": "backend",
+      "package_manager": "pip",
+      "key_directories": {
+        "services": {
+          "path": "services",
+          "purpose": "Business logic"
+        }
+      },
+      "dependencies": [
+        "claude-agent-sdk",
+        "python-dotenv",
+        "tomli",
+        "secretstorage",
+        "real_ladybug",
+        "graphiti-core",
+        "pandas",
+        "pywin32",
+        "google-generativeai",
+        "pydantic",
+        "sentry-sdk"
+      ],
+      "test_directory": "spec",
+      "environment": {
+        "variables": {
+          "GRAPHITI_ENABLED": {
+            "value": "true",
+            "source": ".env",
+            "type": "boolean",
+            "sensitive": false,
+            "required": false
+          }
+        },
+        "required_count": 0,
+        "optional_count": 0,
+        "detected_count": 1
+      },
+      "api": {
+        "routes": [
+          {
+            "path": "/path",
+            "methods": [
+              "GET"
+            ],
+            "file": "analysis/analyzers/route_detector.py",
+            "framework": "FastAPI",
+            "requires_auth": false
+          },
+          {
+            "path": "/path",
+            "methods": [
+              "POST"
+            ],
+            "file": "analysis/analyzers/route_detector.py",
+            "framework": "FastAPI",
+            "requires_auth": false
+          },
+          {
+            "path": "/path",
+            "methods": [
+              "GET",
+              "POST"
+            ],
+            "file": "analysis/analyzers/route_detector.py",
+            "framework": "Flask",
+            "requires_auth": true
+          },
+          {
+            "path": "/metrics",
+            "methods": [
+              "GET"
+            ],
+            "file": "analysis/analyzers/context/monitoring_detector.py",
+            "framework": "Flask",
+            "requires_auth": false
+          }
+        ],
+        "total_routes": 4,
+        "methods": [
+          "POST",
+          "GET"
+        ],
+        "protected_routes": [
+          "/path"
+        ]
+      },
+      "database": {
+        "models": {
+          "Temporary": {
+            "table": "temp_test",
+            "fields": {
+              "id": {
+                "type": "Integer",
+                "primary_key": true,
+                "unique": false,
+                "nullable": true
+              },
+              "spam": {
+                "type": "Unknown",
+                "primary_key": false,
+                "unique": false,
+                "nullable": true
+              }
+            },
+            "file": "venv/lib/python3.13/site-packages/pandas/tests/io/test_sql.py",
+            "orm": "SQLAlchemy"
+          },
+          "Test": {
+            "table": "temp_test",
+            "fields": {
+              "id": {
+                "type": "Integer",
+                "primary_key": true,
+                "unique": false,
+                "nullable": true
+              },
+              "string_column": {
+                "type": "String",
+                "primary_key": false,
+                "unique": false,
+                "nullable": true
+              }
+            },
+            "file": "venv/lib/python3.13/site-packages/pandas/tests/io/test_sql.py",
+            "orm": "SQLAlchemy"
+          }
+        },
+        "total_models": 2,
+        "model_names": [
+          "Temporary",
+          "Test"
+        ]
+      },
+      "services": {
+        "monitoring": [
+          {
+            "type": "sentry",
+            "client": "sentry-sdk"
+          }
+        ]
+      },
+      "monitoring": {
+        "apm_tools": [
+          "sentry"
+        ]
+      }
+    },
+    "shared-ui": {
+      "name": "shared-ui",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/packages/shared-ui",
+      "language": "JavaScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/index.ts",
+      "dependencies": [
+        "react",
+        "lucide-react",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "ai-providers": {
+      "name": "ai-providers",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/packages/ai-providers",
+      "language": "JavaScript",
+      "framework": null,
+      "type": "unknown",
+      "package_manager": "npm",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/index.ts",
+      "dependencies": [
+        "axios"
+      ],
+      "dev_dependencies": []
+    },
+    "utils": {
+      "name": "utils",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/packages/utils",
+      "language": "JavaScript",
+      "framework": null,
+      "type": "library",
+      "package_manager": "npm",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/index.ts",
+      "dependencies": [],
+      "dev_dependencies": []
+    },
+    "app-01-ai-code-reviewer": {
+      "name": "app-01-ai-code-reviewer",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-01-ai-code-reviewer",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "lucide-react",
+        "@tanstack/react-query",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "app-02-document-chat": {
+      "name": "app-02-document-chat",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-02-document-chat",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "lucide-react",
+        "@tanstack/react-query",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "app-03-image-generator": {
+      "name": "app-03-image-generator",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-03-image-generator",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "lucide-react",
+        "@tanstack/react-query",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "app-04-voice-assistant": {
+      "name": "app-04-voice-assistant",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-04-voice-assistant",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "lucide-react",
+        "@tanstack/react-query",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "app-05-code-explainer": {
+      "name": "app-05-code-explainer",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-05-code-explainer",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "lucide-react",
+        "@tanstack/react-query",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "app-06-test-generator": {
+      "name": "app-06-test-generator",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-06-test-generator",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "lucide-react",
+        "@tanstack/react-query",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "app-07-api-integrator": {
+      "name": "app-07-api-integrator",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-07-api-integrator",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "lucide-react",
+        "@tanstack/react-query",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "app-08-data-visualizer": {
+      "name": "app-08-data-visualizer",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-08-data-visualizer",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "@tanstack/react-query",
+        "clsx",
+        "lucide-react",
+        "react",
+        "react-dom",
+        "recharts",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "app-09-autonomous-agent": {
+      "name": "app-09-autonomous-agent",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-09-autonomous-agent",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "lucide-react",
+        "@tanstack/react-query",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "consumes": [
+        "auto-claude.api"
+      ]
+    },
+    "app-10-rag-knowledge-base": {
+      "name": "app-10-rag-knowledge-base",
+      "path": "/home/chris/dev/10-ai-killin-apps-minimaxM2.1/apps/app-10-rag-knowledge-base",
+      "language": "TypeScript",
+      "framework": "React",
+      "type": "frontend",
+      "package_manager": "npm",
+      "default_port": 3000,
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "dev_command": "npm run dev",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/App.tsx",
+      "dependencies": [
+        "react",
+        "react-dom",
+        "lucide-react",
+        "@tanstack/react-query",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "dev_dependencies": [
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react",
+        "autoprefixer",
+        "postcss",
+        "tailwindcss",
+        "typescript",
+        "vite"
+      ],
+      "environment": {
+        "variables": {
+          "VERCEL_OIDC_TOKEN": {
+            "value": "<REDACTED>",
+            "source": ".env.local",
+            "type": "string",
+            "sensitive": true,
+            "required": false
+          }
+        },
+        "required_count": 0,
+        "optional_count": 0,
+        "detected_count": 1
+      },
+      "consumes": [
+        "auto-claude.api"
+      ]
+    }
+  },
+  "infrastructure": {
+    "ci": "GitHub Actions",
+    "ci_workflows": [
+      "deploy-all.yml"
+    ],
+    "deployment": "Vercel"
+  },
+  "conventions": {
+    "js_linting": "ESLint",
+    "formatting": "Prettier",
+    "typescript": true
+  }
+}

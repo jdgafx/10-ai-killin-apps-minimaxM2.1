@@ -1,0 +1,29 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/home/chris/dev/10-ai-killin-apps-minimaxM2.1/**)",
+      "Write(/home/chris/dev/10-ai-killin-apps-minimaxM2.1/**)",
+      "Edit(/home/chris/dev/10-ai-killin-apps-minimaxM2.1/**)",
+      "Glob(/home/chris/dev/10-ai-killin-apps-minimaxM2.1/**)",
+      "Grep(/home/chris/dev/10-ai-killin-apps-minimaxM2.1/**)",
+      "Read(/home/chris/dev/10-ai-killin-apps-minimaxM2.1/.auto-claude/specs/001-ultrawork:-enhance-10-ai-portfolio-apps/**)",
+      "Write(/home/chris/dev/10-ai-killin-apps-minimaxM2.1/.auto-claude/specs/001-ultrawork:-enhance-10-ai-portfolio-apps/**)",
+      "Edit(/home/chris/dev/10-ai-killin-apps-minimaxM2.1/.auto-claude/specs/001-ultrawork:-enhance-10-ai-portfolio-apps/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)"
+    ]
+  }
+}
