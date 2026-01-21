@@ -34,39 +34,47 @@ function App() {
     setIsGenerating(true)
     setTestCode('')
     setTestResults([])
-    await new Promise((r) => setTimeout(r, 2000))
-    const tests = `import { describe, it, expect } from 'vitest';
-import { add } from './math';
 
-describe('add()', () => {
-  it('should add two positive numbers', () => {
-    expect(add(2, 3)).toBe(5);
-  });
+    try {
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer sk-dee6a5873cb1471b8ed2be7f1303359d',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a test automation expert. Generate comprehensive unit tests. Output the test code directly without JSON wrapper.',
+            },
+            {
+              role: 'user',
+              content: `Generate unit tests for this code:\n\n${code}\n\nUse Vitest framework with describe/it/expect syntax. Include edge cases.`,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 3000,
+        }),
+      })
 
-  it('should handle negative numbers', () => {
-    expect(add(-1, 5)).toBe(4);
-  });
+      const data = await response.json()
+      const testContent = data.choices?.[0]?.message?.content || ''
+      setTestCode(testContent)
 
-  it('should return 0 when adding zeros', () => {
-    expect(add(0, 0)).toBe(0);
-  });
+      // Simulate test results
+      setTestResults([
+        { name: 'Edge cases', status: 'pending' },
+        { name: 'Main functionality', status: 'pending' },
+        { name: 'Error handling', status: 'pending' },
+      ])
+    } catch (error) {
+      console.error('Test generation error:', error)
+      setTestCode('// Error generating tests. Please try again.')
+    }
 
-  it('should handle decimal numbers', () => {
-    expect(add(1.5, 2.5)).toBe(4);
-  });
-
-  it('should handle large numbers', () => {
-    expect(add(1000000, 500000)).toBe(1500000);
-  });
-});`
-    setTestCode(tests)
-    setTestResults([
-      { name: 'Positive numbers', status: 'pass' },
-      { name: 'Negative numbers', status: 'pass' },
-      { name: 'Zero handling', status: 'pass' },
-      { name: 'Decimal numbers', status: 'pass' },
-      { name: 'Large numbers', status: 'pending' },
-    ])
     setIsGenerating(false)
   }, [code])
 

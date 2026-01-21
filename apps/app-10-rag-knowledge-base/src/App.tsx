@@ -86,8 +86,11 @@ function App() {
       return
     }
     setIsSearching(true)
+
+    // Get relevant chunks and use AI for better answers
     const queryEmbedding = await generateEmbedding(searchQuery)
     const results: SearchResult[] = []
+
     for (const doc of documents) {
       const chunks = doc.content.split(/\n\n+/).filter((c: string) => c.length > 50)
       for (let i = 0; i < chunks.length; i++) {
@@ -104,6 +107,55 @@ function App() {
       }
     }
     results.sort((a, b) => b.relevance - a.relevance)
+
+    // Use AI to provide better answers for top results
+    if (results.length > 0 && searchQuery.length > 10) {
+      try {
+        const context = results
+          .slice(0, 3)
+          .map((r) => r.chunk)
+          .join('\n\n')
+        const response = await fetch('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer sk-dee6a5873cb1471b8ed2be7f1303359d',
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: 'system',
+                content:
+                  'You are a document Q&A assistant. Provide concise answers based on the context.',
+              },
+              {
+                role: 'user',
+                content: `Context:\n${context}\n\nQuestion: ${searchQuery}\n\nProvide a direct answer based on the context above.`,
+              },
+            ],
+            temperature: 0.3,
+            max_tokens: 200,
+          }),
+        })
+
+        const data = await response.json()
+        const aiAnswer = data.choices?.[0]?.message?.content || ''
+
+        // Add AI summary as first result
+        if (aiAnswer) {
+          results.unshift({
+            documentId: 'ai-summary',
+            title: 'AI Answer',
+            chunk: aiAnswer,
+            relevance: 1.0,
+          })
+        }
+      } catch (error) {
+        console.error('AI search error:', error)
+      }
+    }
+
     setSearchResults(results.slice(0, 10))
     setIsSearching(false)
   }, [searchQuery, documents, generateEmbedding])

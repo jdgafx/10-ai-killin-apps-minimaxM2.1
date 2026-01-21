@@ -1,121 +1,205 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  Mic, 
-  MicOff, 
-  Volume2, 
-  Sparkles, 
-  ChevronRight, 
-  Zap, 
-  Clock, 
-  Globe, 
-  Settings, 
-  Play, 
-  Pause, 
-  Waves, 
-  Bot, 
-  Send, 
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import {
+  Mic,
+  MicOff,
+  Volume2,
+  Sparkles,
+  ChevronRight,
+  Zap,
+  Clock,
+  Globe,
+  Settings,
+  Play,
+  Pause,
+  Waves,
+  Bot,
+  Send,
   X,
   Radio,
-  Headphones
-} from 'lucide-react';
-import { Card, Button, Input } from './lib/components';
+  Headphones,
+} from 'lucide-react'
+import { Card, Button, Input } from './lib/components'
 
-interface Message { id: string; role: 'user' | 'assistant'; content: string; timestamp: Date; audioUrl?: string; }
+interface Message {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: Date
+  audioUrl?: string
+}
 
 function App() {
-  const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [audioLevel, setAudioLevel] = useState(0);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [showApp, setShowApp] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const [isRecording, setIsRecording] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [audioLevel, setAudioLevel] = useState(0)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [showApp, setShowApp] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animationRef = useRef<number>()
 
   useEffect(() => {
     if (isRecording || isProcessing) {
-      let interval: NodeJS.Timeout;
+      let interval: NodeJS.Timeout
       const wave = () => {
-        setAudioLevel(Math.random() * 100);
-        interval = setTimeout(wave, 100);
-      };
-      wave();
-      return () => clearTimeout(interval);
+        setAudioLevel(Math.random() * 100)
+        interval = setTimeout(wave, 100)
+      }
+      wave()
+      return () => clearTimeout(interval)
     }
-  }, [isRecording, isProcessing]);
+  }, [isRecording, isProcessing])
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
     const drawWaveform = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const time = Date.now() / 1000;
-      const bars = 64;
-      const barWidth = canvas.width / bars - 2;
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const time = Date.now() / 1000
+      const bars = 64
+      const barWidth = canvas.width / bars - 2
 
       for (let i = 0; i < bars; i++) {
-        const height = isRecording || isProcessing 
-          ? (Math.sin(time * 3 + i * 0.3) * 0.5 + 0.5) * (audioLevel / 100 * 80 + 20)
-          : 20;
-        const hue = (i / bars) * 60 + 160;
-        const gradient = ctx.createLinearGradient(0, canvas.height - height, 0, canvas.height);
-        gradient.addColorStop(0, `hsla(${hue}, 80%, 60%, 1)`);
-        gradient.addColorStop(1, `hsla(${hue}, 80%, 40%, 1)`);
-        ctx.fillStyle = gradient;
-        ctx.fillRect(i * (barWidth + 2), canvas.height - height, barWidth, height);
+        const height =
+          isRecording || isProcessing
+            ? (Math.sin(time * 3 + i * 0.3) * 0.5 + 0.5) * ((audioLevel / 100) * 80 + 20)
+            : 20
+        const hue = (i / bars) * 60 + 160
+        const gradient = ctx.createLinearGradient(0, canvas.height - height, 0, canvas.height)
+        gradient.addColorStop(0, `hsla(${hue}, 80%, 60%, 1)`)
+        gradient.addColorStop(1, `hsla(${hue}, 80%, 40%, 1)`)
+        ctx.fillStyle = gradient
+        ctx.fillRect(i * (barWidth + 2), canvas.height - height, barWidth, height)
       }
 
       if (isRecording || isProcessing) {
-        animationRef.current = requestAnimationFrame(drawWaveform);
+        animationRef.current = requestAnimationFrame(drawWaveform)
       }
-    };
-
-    drawWaveform();
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [isRecording, isProcessing, audioLevel]);
-
-  const toggleRecording = useCallback(() => {
-    if (isRecording) {
-      setIsProcessing(true);
-      setTimeout(() => {
-        const responses = [
-          "I heard you ask about the weather. Currently, it's sunny with a high of 72°F.",
-          "Based on your question, here's what I found in your documents...",
-          "I've analyzed your request and prepared the following response...",
-        ];
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(), 
-          role: 'assistant', 
-          content: responses[Math.floor(Math.random() * responses.length)], 
-          timestamp: new Date()
-        }]);
-        setIsProcessing(false);
-      }, 2000);
     }
-    setIsRecording(!isRecording);
-  }, [isRecording]);
 
-  const handleSend = useCallback(() => {
-    if (!input.trim()) return;
-    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: input, timestamp: new Date() }]);
-    setInput('');
-    setIsProcessing(true);
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(), 
-        role: 'assistant', 
-        content: "That's a great question! Let me analyze that for you...", 
-        timestamp: new Date()
-      }]);
-      setIsProcessing(false);
-    }, 1500);
-  }, [input]);
+    drawWaveform()
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current)
+    }
+  }, [isRecording, isProcessing, audioLevel])
+
+  const toggleRecording = useCallback(async () => {
+    if (isRecording) {
+      setIsProcessing(true)
+      setTimeout(async () => {
+        // Simulate voice processing and get AI response
+        try {
+          const response = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer sk-dee6a5873cb1471b8ed2be7f1303359d',
+            },
+            body: JSON.stringify({
+              model: 'deepseek-chat',
+              messages: [
+                {
+                  role: 'system',
+                  content:
+                    'You are a helpful voice assistant. Keep responses conversational and concise.',
+                },
+                { role: 'user', content: 'Voice query received' },
+              ],
+              temperature: 0.7,
+              max_tokens: 150,
+            }),
+          })
+
+          const data = await response.json()
+          const responseText = data.choices?.[0]?.message?.content || 'I heard you. How can I help?'
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              role: 'assistant',
+              content: responseText,
+              timestamp: new Date(),
+            },
+          ])
+        } catch (error) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              role: 'assistant',
+              content: "I'm here to help! What would you like to know?",
+              timestamp: new Date(),
+            },
+          ])
+        }
+        setIsProcessing(false)
+      }, 1500)
+    }
+    setIsRecording(!isRecording)
+  }, [isRecording])
+
+  const handleSend = useCallback(async () => {
+    if (!input.trim()) return
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role: 'user', content: input, timestamp: new Date() },
+    ])
+    setInput('')
+    setIsProcessing(true)
+
+    try {
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer sk-dee6a5873cb1471b8ed2be7f1303359d',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a helpful voice assistant. Keep responses conversational and concise.',
+            },
+            { role: 'user', content: input },
+          ],
+          temperature: 0.7,
+          max_tokens: 200,
+        }),
+      })
+
+      const data = await response.json()
+      const responseText = data.choices?.[0]?.message?.content || 'How can I assist you further?'
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: responseText,
+          timestamp: new Date(),
+        },
+      ])
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: "I'm here to help! What would you like to know?",
+          timestamp: new Date(),
+        },
+      ])
+    }
+
+    setIsProcessing(false)
+  }, [input])
 
   if (showApp) {
     return (
@@ -133,9 +217,15 @@ function App() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm"><Headphones className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm"><Settings className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm" onClick={() => setShowApp(false)}><X className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm">
+                <Headphones className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm">
+                <Settings className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowApp(false)}>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </header>
@@ -146,44 +236,65 @@ function App() {
           <Card className="mb-6 bg-[#16161d] border-white/5">
             <div className="text-center p-8">
               <canvas ref={canvasRef} width={600} height={120} className="w-full h-24 mb-4" />
-              
+
               {(isRecording || isProcessing) && (
                 <div className="flex items-center justify-center gap-2 text-emerald-400 mb-4">
                   <Radio className="h-4 w-4 animate-pulse" />
                   <span className="text-sm">{isRecording ? 'Listening...' : 'Processing...'}</span>
                 </div>
               )}
-              
-              <Button 
-                size="lg" 
-                onClick={toggleRecording} 
+
+              <Button
+                size="lg"
+                onClick={toggleRecording}
                 disabled={isProcessing}
                 className={`${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-r from-emerald-500 to-cyan-500'}`}
               >
-                {isRecording ? <><MicOff className="h-5 w-5 mr-2" />Stop</> : <><Mic className="h-5 w-5 mr-2" />Start Speaking</>}
+                {isRecording ? (
+                  <>
+                    <MicOff className="h-5 w-5 mr-2" />
+                    Stop
+                  </>
+                ) : (
+                  <>
+                    <Mic className="h-5 w-5 mr-2" />
+                    Start Speaking
+                  </>
+                )}
               </Button>
-              
+
               <p className="text-xs text-gray-500 mt-3">Tap to speak or type below</p>
             </div>
           </Card>
 
           {/* Messages */}
           <div className="flex-1 space-y-4 mb-6 overflow-auto">
-            {messages.map(msg => (
-              <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  msg.role === 'user' 
-                    ? 'bg-gradient-to-r from-violet-500 to-indigo-500' 
-                    : 'bg-gradient-to-r from-emerald-500 to-cyan-500'
-                }`}>
-                  {msg.role === 'user' ? <span className="text-sm">U</span> : <Bot className="h-5 w-5" />}
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    msg.role === 'user'
+                      ? 'bg-gradient-to-r from-violet-500 to-indigo-500'
+                      : 'bg-gradient-to-r from-emerald-500 to-cyan-500'
+                  }`}
+                >
+                  {msg.role === 'user' ? (
+                    <span className="text-sm">U</span>
+                  ) : (
+                    <Bot className="h-5 w-5" />
+                  )}
                 </div>
                 <div className={`max-w-xl ${msg.role === 'user' ? 'text-right' : ''}`}>
-                  <div className={`inline-block p-4 rounded-2xl ${
-                    msg.role === 'user' 
-                      ? 'bg-gradient-to-r from-cyan-500 to-teal-500 rounded-tr-none' 
-                      : 'bg-[#1e1e27] rounded-tl-none'
-                  }`}>
+                  <div
+                    className={`inline-block p-4 rounded-2xl ${
+                      msg.role === 'user'
+                        ? 'bg-gradient-to-r from-cyan-500 to-teal-500 rounded-tr-none'
+                        : 'bg-[#1e1e27] rounded-tl-none'
+                    }`}
+                  >
                     <p className="text-sm">{msg.content}</p>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">{msg.timestamp.toLocaleTimeString()}</p>
@@ -197,9 +308,18 @@ function App() {
                 </div>
                 <div className="bg-[#1e1e27] p-4 rounded-2xl rounded-tl-none">
                   <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <span
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0ms' }}
+                    ></span>
+                    <span
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '150ms' }}
+                    ></span>
+                    <span
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '300ms' }}
+                    ></span>
                   </div>
                 </div>
               </div>
@@ -229,7 +349,7 @@ function App() {
           </div>
         </main>
       </div>
-    );
+    )
   }
 
   return (
@@ -237,7 +357,10 @@ function App() {
       <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/10 via-[#0d0d12] to-cyan-900/10"></div>
         <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: '1s' }}
+        ></div>
       </div>
 
       <nav className="relative z-10 border-b border-white/5">
@@ -246,7 +369,9 @@ function App() {
             <div className="p-2 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl">
               <Mic className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Voice Assistant</span>
+            <span className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              Voice Assistant
+            </span>
           </div>
           <Button variant="primary" size="sm" onClick={() => setShowApp(true)}>
             <Play className="h-4 w-4 mr-2" />
@@ -261,15 +386,22 @@ function App() {
             <Sparkles className="h-4 w-4" />
             <span>Powered by MiniMax Voice AI</span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            <span className="bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent">Your AI Voice Assistant</span>
+            <span className="bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent">
+              Your AI Voice Assistant
+            </span>
             <br />
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Speaks Your Language</span>
+            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              Speaks Your Language
+            </span>
           </h1>
-          
-          <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">Experience natural voice conversations with AI. Powered by advanced speech recognition and synthesis.</p>
-          
+
+          <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+            Experience natural voice conversations with AI. Powered by advanced speech recognition
+            and synthesis.
+          </p>
+
           <Button size="lg" onClick={() => setShowApp(true)} className="group">
             Start Speaking
             <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -281,7 +413,11 @@ function App() {
             <div className="p-8 text-center">
               <canvas ref={canvasRef} width={600} height={80} className="w-full h-16 mb-6" />
               <p className="text-gray-500 mb-4">Tap the microphone and start speaking</p>
-              <Button size="lg" onClick={() => setShowApp(true)} className="bg-gradient-to-r from-emerald-500 to-cyan-500">
+              <Button
+                size="lg"
+                onClick={() => setShowApp(true)}
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500"
+              >
                 Launch App →
               </Button>
             </div>
@@ -294,7 +430,12 @@ function App() {
           <div className="relative p-12 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-3xl overflow-hidden">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Talk to AI?</h2>
             <p className="text-emerald-100 mb-8">Start your voice conversation today.</p>
-            <Button size="lg" variant="secondary" onClick={() => setShowApp(true)} className="group">
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => setShowApp(true)}
+              className="group"
+            >
               Launch App
               <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
@@ -302,7 +443,7 @@ function App() {
         </div>
       </section>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
