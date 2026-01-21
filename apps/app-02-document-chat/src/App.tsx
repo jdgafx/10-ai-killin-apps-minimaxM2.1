@@ -1,22 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { 
   MessageSquare, 
   FileText, 
-  Search, 
-  Sparkles,
-  ArrowRight,
+  Sparkles, 
+  ChevronRight, 
   Upload,
   Zap,
   Shield,
   Clock,
   Bot,
   Send,
-  CheckCircle2,
+  CheckCircle,
   Brain,
   Play,
-  X
+  X,
+  Search,
+  Plus
 } from 'lucide-react';
-import { Card, Button, Input, LoadingSpinner, ErrorAlert } from './lib/components';
+import { Card, Button, Input } from './lib/components';
 
 interface Message {
   id: string;
@@ -25,13 +26,27 @@ interface Message {
   timestamp: Date;
 }
 
+interface Document {
+  id: string;
+  name: string;
+  content: string;
+  chunks: number;
+}
+
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [documents, setDocuments] = useState<{id: string; name: string; content: string}[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [showUpload, setShowUpload] = useState(false);
   const [showApp, setShowApp] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSend = useCallback(async () => {
     if (!input.trim()) return;
@@ -46,15 +61,14 @@ function App() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+    setIsTyping(true);
     
-    // Simulate AI response
     await new Promise(r => setTimeout(r, 1500));
     
     const responses = [
       "Based on your documents, I found that the key findings include a 47% revenue increase in Q4 and improved customer retention at 94%.",
       "Looking at the data, the report mentions successful market expansion and operational efficiency improvements across all departments.",
       "The document analysis shows three main action items: optimize workflow, reduce costs, and enhance customer experience.",
-      "From the uploaded files, I can see the Q4 metrics are positive with strong growth in all key performance indicators."
     ];
     
     const aiMsg: Message = {
@@ -66,6 +80,7 @@ function App() {
     
     setMessages(prev => [...prev, aiMsg]);
     setIsLoading(false);
+    setIsTyping(false);
   }, [input]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,155 +91,221 @@ function App() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = event.target?.result as string;
+        const chunks = content.split(/\n\n+/).filter(c => c.length > 50).length;
         setDocuments(prev => [...prev, {
           id: Date.now().toString() + Math.random(),
           name: file.name,
-          content: content.substring(0, 500)
+          content: content.substring(0, 500),
+          chunks
         }]);
       };
       reader.readAsText(file);
     }
     setShowUpload(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
   if (showApp) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
-        <header className="bg-gray-800 border-b border-gray-700 p-4">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
+      <div className="min-h-screen bg-[#0f0f12] text-white flex">
+        {/* Sidebar */}
+        <aside className="w-72 bg-[#16161d] border-r border-white/5 flex flex-col">
+          <div className="p-4 border-b border-white/5">
+            <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-lg">
                 <MessageSquare className="h-5 w-5 text-white" />
               </div>
-              <span className="font-bold">Document Chat</span>
+              <span className="font-semibold">Document Chat</span>
             </div>
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={() => setShowUpload(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowApp(false)}>
-                Back to Home
-              </Button>
-            </div>
+            <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Chat
+            </Button>
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} multiple accept=".txt,.md,.json,.js,.ts,.py" className="hidden" />
           </div>
-        </header>
-        
-        {showUpload && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold">Upload Documents</h3>
-                <button onClick={() => setShowUpload(false)}><X className="h-5 w-5" /></button>
-              </div>
-              <input
-                type="file"
-                multiple
-                accept=".txt,.md,.json,.js,.ts,.py"
-                onChange={handleFileUpload}
-                className="w-full p-4 border-2 border-dashed border-gray-600 rounded-lg"
-              />
-              <p className="text-sm text-gray-400 mt-2">Supports text files, Markdown, and code</p>
-            </Card>
-          </div>
-        )}
-        
-        <main className="max-w-4xl mx-auto p-6">
-          {documents.length > 0 && (
-            <div className="mb-4 flex flex-wrap gap-2">
-              {documents.map(doc => (
-                <span key={doc.id} className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-sm flex items-center gap-2">
-                  <FileText className="h-3 w-3" />
-                  {doc.name}
-                </span>
-              ))}
-            </div>
-          )}
           
-          <div className="space-y-4 mb-6">
-            {messages.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <Brain className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Upload documents and ask questions</p>
+          {/* Documents */}
+          <div className="flex-1 overflow-auto p-4">
+            <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">Documents</div>
+            {documents.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No documents yet</p>
+                <Button variant="ghost" size="sm" className="mt-2" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-1" /> Upload
+                </Button>
               </div>
             ) : (
-              messages.map(msg => (
-                <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    msg.role === 'user' ? 'bg-gradient-to-r from-violet-500 to-indigo-500' : 'bg-gradient-to-r from-cyan-500 to-teal-500'
-                  }`}>
-                    {msg.role === 'user' ? 'You' : <Bot className="h-4 w-4" />}
+              <div className="space-y-2">
+                {documents.map(doc => (
+                  <div key={doc.id} className="p-3 bg-[#1e1e27] rounded-lg hover:bg-[#252530] transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-cyan-400" />
+                      <span className="text-sm truncate flex-1">{doc.name}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">{doc.chunks} chunks</p>
                   </div>
-                  <div className={`max-w-md p-4 rounded-2xl ${
-                    msg.role === 'user' 
-                      ? 'bg-gradient-to-r from-cyan-500 to-teal-500 rounded-tr-none' 
-                      : 'bg-white/10 rounded-tl-none'
-                  }`}>
-                    <p>{msg.content}</p>
-                  </div>
-                </div>
-              ))
-            )}
-            {isLoading && (
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 flex items-center justify-center">
-                  <Bot className="h-4 w-4" />
-                </div>
-                <div className="bg-white/10 p-4 rounded-2xl rounded-tl-none">
-                  <LoadingSpinner />
-                </div>
+                ))}
               </div>
             )}
           </div>
           
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask a question about your documents..."
-              className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500"
-            />
-            <Button onClick={handleSend} disabled={!input.trim() || isLoading}>
-              <Send className="h-5 w-5" />
-            </Button>
+          {/* User */}
+          <div className="p-4 border-t border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium">U</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">User</p>
+                <p className="text-xs text-gray-500">Online</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="h-16 bg-[#0f0f12]/80 backdrop-blur border-b border-white/5 flex items-center justify-between px-6">
+            <div className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-cyan-400" />
+              <span className="font-medium">RAG-Powered Chat</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><Shield className="h-3 w-3" />Encrypted</span>
+            </div>
+          </header>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-auto p-6 space-y-6">
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="p-4 bg-gradient-to-r from-cyan-500/20 to-teal-500/20 rounded-2xl mb-4">
+                  <Bot className="h-12 w-12 text-cyan-400" />
+                </div>
+                <h2 className="text-xl font-semibold mb-2">Start a Conversation</h2>
+                <p className="text-gray-400 max-w-md">Upload documents and ask questions about their content. I'll provide accurate, context-aware answers.</p>
+              </div>
+            ) : (
+              <>
+                {messages.map(msg => (
+                  <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      msg.role === 'user' 
+                        ? 'bg-gradient-to-r from-violet-500 to-indigo-500' 
+                        : 'bg-gradient-to-r from-cyan-500 to-teal-500'
+                    }`}>
+                      {msg.role === 'user' ? (
+                        <span className="text-sm font-medium">U</span>
+                      ) : (
+                        <Bot className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className={`max-w-2xl ${msg.role === 'user' ? 'text-right' : ''}`}>
+                      <div className={`inline-block p-4 rounded-2xl ${
+                        msg.role === 'user' 
+                          ? 'bg-gradient-to-r from-cyan-500 to-teal-500 rounded-tr-none' 
+                          : 'bg-[#1e1e27] rounded-tl-none'
+                      }`}>
+                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">{msg.timestamp.toLocaleTimeString()}</p>
+                    </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 flex items-center justify-center">
+                      <Bot className="h-5 w-5" />
+                    </div>
+                    <div className="bg-[#1e1e27] p-4 rounded-2xl rounded-tl-none">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+          </div>
+
+          {/* Input */}
+          <div className="p-4 border-t border-white/5">
+            <div className="flex gap-3">
+              <Button variant="ghost" size="sm" onClick={() => setShowUpload(true)} className="shrink-0">
+                <Upload className="h-5 w-5" />
+              </Button>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Ask about your documents..."
+                className="flex-1 px-4 py-3 bg-[#1e1e27] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
+              />
+              <Button onClick={handleSend} disabled={!input.trim() || isLoading} className="shrink-0">
+                <Send className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </main>
+
+        {/* Upload Modal */}
+        {showUpload && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-[#1e1e27] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Upload Documents</h3>
+                <button onClick={() => setShowUpload(false)}><X className="h-5 w-5" /></button>
+              </div>
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center cursor-pointer hover:border-cyan-500/50 transition-colors"
+              >
+                <Upload className="h-10 w-10 mx-auto mb-3 text-gray-400" />
+                <p className="text-sm text-gray-400">Click to upload or drag and drop</p>
+                <p className="text-xs text-gray-500 mt-1">TXT, MD, JSON, JS, TS, PY</p>
+              </div>
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} multiple accept=".txt,.md,.json,.js,.ts,.py" className="hidden" />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white overflow-hidden">
-      {/* Animated Background */}
+    <div className="min-h-screen bg-[#0f0f12] text-white overflow-hidden">
+      {/* Background */}
       <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-cyan-900/20 to-teal-900/20"></div>
-        <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 via-[#0f0f12] to-teal-900/10"></div>
+        <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-teal-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
 
-      <nav className="relative z-10 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-xl">
-                <MessageSquare className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                Document Chat
-              </span>
+      <nav className="relative z-10 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-xl">
+              <MessageSquare className="h-6 w-6 text-white" />
             </div>
-            <Button variant="primary" size="sm" onClick={() => setShowApp(true)}>
-              <Play className="h-4 w-4 mr-2" />
-              Try App
-            </Button>
+            <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
+              Document Chat
+            </span>
           </div>
+          <Button variant="primary" size="sm" onClick={() => setShowApp(true)}>
+            <Play className="h-4 w-4 mr-2" />
+            Launch App
+          </Button>
         </div>
       </nav>
 
       <section className="relative z-10 pt-24 pb-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-4xl mx-auto">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-cyan-400 text-sm mb-8">
               <Brain className="h-4 w-4" />
@@ -247,50 +328,51 @@ function App() {
             
             <Button size="lg" onClick={() => setShowApp(true)} className="group">
               Start Chatting
-              <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
 
           {/* Chat Demo */}
           <div className="mt-16 max-w-4xl mx-auto">
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-              <div className="p-4 border-b border-white/10 flex items-center justify-between">
+            <div className="bg-[#16161d] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="p-4 border-b border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 flex items-center justify-center">
                     <Bot className="h-4 w-4" />
                   </div>
                   <span className="font-medium">Document Chat</span>
                 </div>
-                <Button size="sm" onClick={() => setShowApp(true)}>Open App →</Button>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">2 documents</span>
+                  <Button size="sm" onClick={() => setShowApp(true)}>Open App →</Button>
+                </div>
               </div>
               <div className="p-6 space-y-4">
                 <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 flex items-center justify-center flex-shrink-0">
-                    <Bot className="h-4 w-4" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 flex items-center justify-center flex-shrink-0">
+                    <Bot className="h-5 w-5" />
                   </div>
-                  <div className="bg-white/10 rounded-2xl rounded-tl-none p-4">
+                  <div className="bg-[#1e1e27] rounded-2xl rounded-tl-none p-4">
                     <p className="text-sm">Hi! I've analyzed your documents. What would you like to know?</p>
                   </div>
                 </div>
                 <div className="flex gap-4 flex-row-reverse">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs">You</span>
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">U</span>
                   </div>
                   <div className="bg-gradient-to-r from-cyan-500 to-teal-500 rounded-2xl rounded-tr-none p-4">
                     <p className="text-sm">What are the key findings in this report?</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 flex items-center justify-center flex-shrink-0">
-                    <Bot className="h-4 w-4" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 flex items-center justify-center flex-shrink-0">
+                    <Bot className="h-5 w-5" />
                   </div>
-                  <div className="bg-white/10 rounded-2xl rounded-tl-none p-4">
+                  <div className="bg-[#1e1e27] rounded-2xl rounded-tl-none p-4">
                     <div className="flex items-start gap-2">
                       <Sparkles className="h-4 w-4 text-cyan-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-sm text-gray-300">
-                          Based on my analysis, key findings include:
-                        </p>
+                        <p className="text-sm text-gray-300">Based on my analysis, key findings include:</p>
                         <ul className="mt-2 space-y-1 text-sm text-gray-400">
                           <li className="flex items-start gap-2"><span className="text-cyan-400">•</span>Revenue increased by 47% in Q4</li>
                           <li className="flex items-start gap-2"><span className="text-cyan-400">•</span>Customer retention improved to 94%</li>
@@ -306,14 +388,13 @@ function App() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="relative z-10 py-24">
-        <div className="max-w-4xl mx-auto px-4 text-center">
+        <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="relative p-12 bg-gradient-to-r from-cyan-600 to-teal-600 rounded-3xl overflow-hidden">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Unlock Your Documents?</h2>
             <Button size="lg" variant="secondary" onClick={() => setShowApp(true)} className="group">
               Launch App
-              <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
         </div>

@@ -1,19 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Image as ImageIcon,
   Sparkles,
   Palette,
-  Zap,
   Download,
   Wand2,
   Layers,
   Clock,
-  CheckCircle2,
+  CheckCircle,
   Play,
   X,
-  ArrowRight
+  ChevronRight,
+  Heart,
+  RefreshCw,
+  ZoomIn
 } from 'lucide-react';
-import { Card, Button, Input, LoadingSpinner, ErrorAlert } from './lib/components';
+import { Card, Button, Input } from './lib/components';
 
 interface GeneratedImage {
   id: string;
@@ -23,11 +25,13 @@ interface GeneratedImage {
   timestamp: Date;
 }
 
-const sampleImages = [
-  { id: '1', prompt: 'Cyberpunk city at night', style: 'Cinematic', gradient: 'from-purple-500 to-pink-500' },
-  { id: '2', prompt: 'Peaceful mountain landscape', style: 'Oil Painting', gradient: 'from-green-500 to-teal-500' },
-  { id: '3', prompt: 'Abstract geometric patterns', style: 'Minimalist', gradient: 'from-orange-500 to-red-500' },
-  { id: '4', prompt: 'Portrait of a warrior', style: 'Digital Art', gradient: 'from-blue-500 to-indigo-500' },
+const styles = [
+  { id: 'photorealistic', name: 'Photorealistic', icon: '📸' },
+  { id: 'oil-painting', name: 'Oil Painting', icon: '🎨' },
+  { id: 'digital-art', name: 'Digital Art', icon: '✨' },
+  { id: 'anime', name: 'Anime', icon: '🎌' },
+  { id: '3d-render', name: '3D Render', icon: '🎲' },
+  { id: 'minimalist', name: 'Minimalist', icon: '◻️' },
 ];
 
 function App() {
@@ -35,30 +39,52 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState('photorealistic');
   const [showApp, setShowApp] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const gradients = [
+    'from-purple-500 to-pink-500',
+    'from-blue-500 to-cyan-500',
+    'from-green-500 to-emerald-500',
+    'from-orange-500 to-red-500',
+    'from-violet-500 to-indigo-500',
+    'from-pink-500 to-rose-500',
+    'from-amber-500 to-yellow-500',
+    'from-teal-500 to-cyan-500',
+  ];
+
+  useEffect(() => {
+    if (isGenerating) {
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + Math.random() * 15;
+        });
+      }, 300);
+      return () => clearInterval(interval);
+    } else {
+      setProgress(0);
+    }
+  }, [isGenerating]);
 
   const generateImage = useCallback(async () => {
     if (!prompt.trim()) return;
     
     setIsGenerating(true);
+    setProgress(0);
     
-    // Simulate image generation
     await new Promise(r => setTimeout(r, 3000));
-    
-    const gradients = [
-      'from-purple-500 to-pink-500',
-      'from-blue-500 to-cyan-500',
-      'from-green-500 to-emerald-500',
-      'from-orange-500 to-red-500',
-      'from-violet-500 to-indigo-500',
-      'from-pink-500 to-rose-500',
-    ];
     
     const newImage: GeneratedImage = {
       id: Date.now().toString(),
       prompt,
       url: gradients[Math.floor(Math.random() * gradients.length)],
-      style: ['Cinematic', 'Oil Painting', 'Digital Art', 'Minimalist', '3D Render'][Math.floor(Math.random() * 5)],
+      style: styles.find(s => s.id === selectedStyle)?.name || 'Custom',
       timestamp: new Date()
     };
     
@@ -66,118 +92,169 @@ function App() {
     setCurrentImage(newImage.url);
     setIsGenerating(false);
     setPrompt('');
-  }, [prompt]);
+  }, [prompt, selectedStyle]);
 
   const downloadImage = useCallback((gradient: string) => {
-    // Create a canvas and download
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1024;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const colors = gradient.replace('from-', '').replace('to-', '').split(' ');
-      const gradient1 = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient1.addColorStop(0, colors[0].replace('-500', '-400'));
-      gradient1.addColorStop(1, colors[1].replace('-500', '-400'));
-      ctx.fillStyle = gradient1;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      const link = document.createElement('a');
-      link.download = `ai-image-${Date.now()}.png`;
-      link.href = canvas.toDataURL();
-      link.click();
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const colors = gradient.replace('from-', '').replace('to-', '').split(' ');
+        const gradient1 = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient1.addColorStop(0, colors[0].replace('-500', '-400'));
+        gradient1.addColorStop(1, colors[1].replace('-500', '-400'));
+        ctx.fillStyle = gradient1;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const link = document.createElement('a');
+        link.download = `ai-image-${Date.now()}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+      }
     }
   }, []);
 
   if (showApp) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
-        <header className="bg-gray-800 border-b border-gray-700 p-4">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
+      <div className="min-h-screen bg-[#0a0a0f] text-white">
+        <canvas ref={canvasRef} width={1024} height={1024} className="hidden" />
+        
+        {/* Header */}
+        <header className="bg-[#12121a] border-b border-white/5 px-6 py-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <div className="p-2 bg-gradient-to-r from-pink-500 to-violet-500 rounded-lg">
                 <ImageIcon className="h-5 w-5 text-white" />
               </div>
-              <span className="font-bold">AI Image Generator</span>
+              <div>
+                <h1 className="font-semibold">AI Image Generator</h1>
+                <p className="text-xs text-gray-400">Powered by MiniMax AI</p>
+              </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setShowApp(false)}>
-              Back to Home
+            <Button variant="ghost" size="sm" onClick={() => setShowApp(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Close
             </Button>
           </div>
         </header>
-        
-        <main className="max-w-6xl mx-auto p-6">
+
+        <main className="max-w-7xl mx-auto p-6">
           {/* Generator */}
-          <Card className="mb-8">
-            <div className="flex gap-4">
-              <input
-                type="text"
+          <Card className="mb-8 bg-[#12121a] border-white/5">
+            <div className="p-6">
+              <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && generateImage()}
-                placeholder="Describe your image..."
-                className="flex-1 px-4 py-3 bg-gray-950 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-pink-500"
+                onKeyPress={(e) => e.key === 'Enter' && e.shiftKey && generateImage()}
+                placeholder="Describe the image you want to generate..."
+                className="w-full h-24 px-4 py-3 bg-[#1a1a24] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-pink-500 resize-none mb-4"
               />
-              <Button onClick={() => generateImage()} disabled={!prompt.trim() || isGenerating}>
+              
+              {/* Style Selection */}
+              <div className="mb-4">
+                <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">Style</label>
+                <div className="flex flex-wrap gap-2">
+                  {styles.map(style => (
+                    <button
+                      key={style.id}
+                      onClick={() => setSelectedStyle(style.id)}
+                      className={`px-3 py-2 rounded-lg text-sm transition-all ${
+                        selectedStyle === style.id
+                          ? 'bg-gradient-to-r from-pink-500 to-violet-500 text-white'
+                          : 'bg-[#1a1a24] text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <span className="mr-1">{style.icon}</span>
+                      {style.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <Button 
+                onClick={generateImage} 
+                disabled={!prompt.trim() || isGenerating} 
+                className="w-full bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-600 hover:to-violet-600"
+              >
                 {isGenerating ? (
                   <>
-                    <LoadingSpinner className="h-5 w-5 mr-2" />
-                    Generating...
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generating... {Math.min(Math.round(progress), 100)}%
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-5 w-5 mr-2" />
-                    Generate
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Image
                   </>
                 )}
               </Button>
             </div>
           </Card>
-          
-          {/* Current Image */}
-          {currentImage && (
-            <Card className="mb-8">
-              <h3 className="font-semibold mb-4">Latest Generation</h3>
-              <div className="relative aspect-square rounded-xl overflow-hidden mb-4">
-                <div className={`absolute inset-0 bg-gradient-to-br ${currentImage}`}></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p className="text-white/80 text-lg font-medium text-center px-4">
-                    {generatedImages[0]?.prompt || 'Your generated image'}
-                  </p>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Current Image */}
+            {currentImage && (
+              <Card className="lg:col-span-2 bg-[#12121a] border-white/5">
+                <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                  <h2 className="font-semibold">Latest Generation</h2>
+                  <Button variant="outline" size="sm" onClick={() => downloadImage(currentImage)}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
                 </div>
+                <div className="p-4">
+                  <div className="relative aspect-square rounded-xl overflow-hidden">
+                    <div className={`absolute inset-0 bg-gradient-to-br ${currentImage}`}></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <p className="text-white/80 text-lg font-medium text-center px-4 bg-black/30 backdrop-blur rounded-lg">
+                        {generatedImages[0]?.prompt || 'Your generated image'}
+                      </p>
+                    </div>
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <div className="flex items-center gap-2 bg-black/50 backdrop-blur rounded-lg px-3 py-2">
+                        <span className="text-xs text-gray-300">{generatedImages[0]?.style}</span>
+                        <span className="text-xs text-gray-500">•</span>
+                        <span className="text-xs text-gray-400">{generatedImages[0]?.timestamp.toLocaleTimeString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Gallery */}
+            <Card className="bg-[#12121a] border-white/5">
+              <div className="p-4 border-b border-white/5">
+                <h2 className="font-semibold">Your Gallery</h2>
+                <p className="text-xs text-gray-500">{generatedImages.length} images</p>
               </div>
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => downloadImage(currentImage)}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
+              <div className="p-4">
+                <div className="grid grid-cols-2 gap-3 max-h-96 overflow-auto">
+                  {generatedImages.map((img) => (
+                    <div 
+                      key={img.id} 
+                      className="group relative aspect-square rounded-lg overflow-hidden cursor-pointer"
+                      onClick={() => setCurrentImage(img.url)}
+                    >
+                      <div className={`absolute inset-0 bg-gradient-to-br ${img.url}`}></div>
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <ZoomIn className="h-6 w-6" />
+                      </div>
+                      <div className="absolute bottom-2 left-2 right-2 transform translate-y-full group-hover:translate-y-0 transition-transform">
+                        <p className="text-xs text-white bg-black/70 px-2 py-1 rounded truncate">{img.prompt}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {generatedImages.length === 0 && (
+                    <div className="col-span-2 text-center py-12 text-gray-500">
+                      <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No images yet</p>
+                      <p className="text-xs">Start generating!</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </Card>
-          )}
-          
-          {/* Gallery */}
-          <div>
-            <h3 className="font-semibold mb-4">Your Gallery</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {generatedImages.map((img) => (
-                <div key={img.id} className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer" onClick={() => setCurrentImage(img.url)}>
-                  <div className={`absolute inset-0 bg-gradient-to-br ${img.url}`}></div>
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Button size="sm" variant="secondary" onClick={() => { downloadImage(img.url); }}>
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="absolute bottom-2 left-2 right-2 transform translate-y-full group-hover:translate-y-0 transition-transform">
-                    <p className="text-xs text-white bg-black/50 px-2 py-1 rounded truncate">{img.prompt}</p>
-                  </div>
-                </div>
-              ))}
-              {generatedImages.length === 0 && sampleImages.map((img) => (
-                <div key={img.id} className="aspect-square rounded-xl overflow-hidden cursor-pointer" onClick={() => setCurrentImage(img.gradient)}>
-                  <div className={`absolute inset-0 bg-gradient-to-br ${img.gradient}`}></div>
-                </div>
-              ))}
-            </div>
           </div>
         </main>
       </div>
@@ -185,34 +262,33 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white overflow-hidden">
+    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-hidden">
+      {/* Background */}
       <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-900/20 via-purple-900/20 to-violet-900/20"></div>
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-900/10 via-[#0a0a0f] to-violet-900/10"></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-pink-500/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
 
-      <nav className="relative z-10 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-pink-500 to-violet-500 rounded-xl">
-                <ImageIcon className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-transparent">
-                AI Image Generator
-              </span>
+      <nav className="relative z-10 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-r from-pink-500 to-violet-500 rounded-xl">
+              <ImageIcon className="h-6 w-6 text-white" />
             </div>
-            <Button variant="primary" size="sm" onClick={() => setShowApp(true)}>
-              <Play className="h-4 w-4 mr-2" />
-              Try App
-            </Button>
+            <span className="text-xl font-bold bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-transparent">
+              AI Image Generator
+            </span>
           </div>
+          <Button variant="primary" size="sm" onClick={() => setShowApp(true)}>
+            <Play className="h-4 w-4 mr-2" />
+            Launch App
+          </Button>
         </div>
       </nav>
 
       <section className="relative z-10 pt-24 pb-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-4xl mx-auto">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-pink-500/10 border border-pink-500/20 rounded-full text-pink-400 text-sm mb-8">
               <Sparkles className="h-4 w-4" />
@@ -235,7 +311,7 @@ function App() {
             
             <Button size="lg" onClick={() => setShowApp(true)} className="group">
               Start Creating
-              <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
 
@@ -247,8 +323,13 @@ function App() {
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {sampleImages.map((img) => (
-                <div key={img.id} className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer" onClick={() => setShowApp(true)}>
+              {[
+                { prompt: 'Cyberpunk city at night', style: 'Cinematic', gradient: 'from-purple-500 to-pink-500' },
+                { prompt: 'Peaceful mountain landscape', style: 'Oil Painting', gradient: 'from-green-500 to-teal-500' },
+                { prompt: 'Abstract geometric patterns', style: 'Minimalist', gradient: 'from-orange-500 to-red-500' },
+                { prompt: 'Portrait of a warrior', style: 'Digital Art', gradient: 'from-blue-500 to-indigo-500' },
+              ].map((img, i) => (
+                <div key={i} className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer" onClick={() => setShowApp(true)}>
                   <div className={`absolute inset-0 bg-gradient-to-br ${img.gradient} opacity-80`}></div>
                   <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-all"></div>
                   <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -262,14 +343,13 @@ function App() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="relative z-10 py-24">
-        <div className="max-w-4xl mx-auto px-4 text-center">
+        <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="relative p-12 bg-gradient-to-r from-pink-600 to-violet-600 rounded-3xl overflow-hidden">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Create Magic?</h2>
             <Button size="lg" variant="secondary" onClick={() => setShowApp(true)} className="group">
               Launch App
-              <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
         </div>

@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --accent-primary: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.3);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: white;
+  min-height: 100vh;
+}
+
+.code-block {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.highlight-line {
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid var(--accent-primary);
+}
+
+.documentation-nav a {
+  transition: all 0.2s ease;
+}
+
+.documentation-nav a:hover {
+  background: rgba(59, 130, 246, 0.1);
+  padding-left: 1rem;
+}
