@@ -11,11 +11,13 @@
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "pages:deploy": "wrangler pages deploy dist",
+    "pages:dev": "wrangler pages dev dist"
   },
   "devDependencies": {
-    "prettier": "^3.0.0",
     "eslint": "^8.45.0",
+    "prettier": "^3.0.0",
     "typescript": "^5.1.6"
   }
 }
