@@ -1,34 +1,190 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react'
 
-export function useAIProvider() {
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const chat = useCallback(async (messages: { role: string; content: string }[]): Promise<string> => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    
-    const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content || '';
-    
-    return `**RAG Knowledge Base Search:**
+const PROVIDERS = {
+  minimax: {
+    baseUrl: 'https://api.minimax.chat/v1',
+    model: 'minimax-abab6.5-chat',
+  },
+  deepseek: {
+    baseUrl: 'https://api.deepseek.com',
+    model: 'deepseek-chat',
+  },
+  gemini: {
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    model: 'gemini-2.0-flash-exp',
+  },
+} as const
 
-Query: "${lastUserMessage.substring(0, 50)}..."
+type Provider = keyof typeof PROVIDERS
 
-**Relevant Documents Found:**
-1. Document A (95% match) - Contains relevant information about the topic
-2. Document B (87% match) - Secondary reference with additional context
-3. Document C (72% match) - Related background information
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
 
-**Answer:**
-Based on the vector search results, I found several relevant documents in your knowledge base. The AI has retrieved the most semantically similar chunks and synthesized this response.
+export function useAIProvider(defaultProvider: Provider = 'minimax') {
+  const [provider, setProvider] = useState<Provider>(defaultProvider)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-In production with full RAG implementation:
-- Documents are indexed as vectors
-- Semantic search finds relevant chunks
-- AI synthesizes coherent responses
+  const getApiKey = () => {
+    const keyMap: Record<Provider, string> = {
+      minimax: import.meta.env.VITE_MINIMAX_API_KEY || '',
+      deepseek: import.meta.env.VITE_DEEPSEEK_API_KEY || '',
+      gemini: import.meta.env.VITE_GEMINI_API_KEY || '',
+    }
+    return keyMap[provider]
+  }
 
-Configure VITE_MINIMAX_API_KEY for full RAG capabilities.`;
-  }, []);
-  
-  return { chat, isLoading };
+  const chat = useCallback(
+    async (messages: ChatMessage[]): Promise<string> => {
+      setIsLoading(true)
+      setError(null)
+
+      const apiKey = getApiKey()
+      if (!apiKey) {
+        setError(
+          `API key not set for ${provider}. Set VITE_${provider.toUpperCase()}_API_KEY in .env`,
+        )
+        setIsLoading(false)
+        return `[${provider.toUpperCase()} API key not configured]`
+      }
+
+      const config = PROVIDERS[provider]
+
+      try {
+        let response: Response
+
+        if (provider === 'gemini') {
+          const contents = messages.map((msg) => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }],
+          }))
+
+          response = await fetch(
+            `${config.baseUrl}/models/${config.model}:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents }),
+            },
+          )
+        } else {
+          response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: config.model,
+              messages: messages.map((msg) => ({ role: msg.role, content: msg.content })),
+              temperature: 0.7,
+              max_tokens: 4096,
+            }),
+          })
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error?.message || `HTTP ${response.status}`)
+        }
+
+        const data = await response.json()
+        let content = ''
+
+        if (provider === 'gemini') {
+          content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        } else {
+          content = data.choices?.[0]?.message?.content || ''
+        }
+
+        setIsLoading(false)
+        return content
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        setError(message)
+
+        if (provider === 'minimax') {
+          try {
+            const result = await chatWithProvider(messages, 'deepseek')
+            return result
+          } catch {
+            try {
+              const result = await chatWithProvider(messages, 'gemini')
+              return result
+            } catch {
+              setIsLoading(false)
+              return `[Error: ${message}]`
+            }
+          }
+        }
+
+        setIsLoading(false)
+        return `[Error: ${message}]`
+      }
+    },
+    [provider],
+  )
+
+  return { chat, isLoading, error, provider, setProvider }
+}
+
+async function chatWithProvider(messages: ChatMessage[], provider: Provider): Promise<string> {
+  const keyMap: Record<Provider, string> = {
+    minimax: import.meta.env.VITE_MINIMAX_API_KEY || '',
+    deepseek: import.meta.env.VITE_DEEPSEEK_API_KEY || '',
+    gemini: import.meta.env.VITE_GEMINI_API_KEY || '',
+  }
+
+  const config = PROVIDERS[provider]
+  const apiKey = keyMap[provider]
+
+  if (!apiKey) {
+    throw new Error(`API key not set for ${provider}`)
+  }
+
+  let response: Response
+
+  if (provider === 'gemini') {
+    const contents = messages.map((msg) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }],
+    }))
+
+    response = await fetch(
+      `${config.baseUrl}/models/${config.model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents }),
+      },
+    )
+  } else {
+    response = await fetch(`${config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: messages.map((msg) => ({ role: msg.role, content: msg.content })),
+        temperature: 0.7,
+        max_tokens: 4096,
+      }),
+    })
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.error?.message || `HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  if (provider === 'gemini') {
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  }
+  return data.choices?.[0]?.message?.content || ''
 }

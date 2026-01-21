@@ -1,80 +1,194 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react'
 
-export function useAIProvider() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const chat = useCallback(async (messages: { role: string; content: string }[]): Promise<string> => {
-    setIsLoading(true);
-    setError(null);
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    
-    const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content || '';
-    
-    if (lastUserMessage.includes('review')) {
-      return `I've analyzed your code and found several improvements:
+const PROVIDERS = {
+  minimax: {
+    baseUrl: 'https://api.minimax.chat/v1',
+    model: 'minimax-abab6.5-chat',
+  },
+  deepseek: {
+    baseUrl: 'https://api.deepseek.com',
+    model: 'deepseek-chat',
+  },
+  gemini: {
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    model: 'gemini-2.0-flash-exp',
+  },
+} as const
 
-**Issues Found:**
-1. Missing error handling for async operations
-2. Consider using TypeScript interfaces for better type safety
-3. Extract reusable logic into custom hooks
+type Provider = keyof typeof PROVIDERS
 
-**Suggested Refactor:**
-async function fetchData() {
-  try {
-    const response = await fetch('/api/data');
-    return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch:', error);
-    throw error;
-  }
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
 }
 
-**Score: 8.5/10** - Good structure, minor improvements needed.`;
+export function useAIProvider(defaultProvider: Provider = 'minimax') {
+  const [provider, setProvider] = useState<Provider>(defaultProvider)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const getApiKey = () => {
+    const keyMap: Record<Provider, string> = {
+      minimax: import.meta.env.VITE_MINIMAX_API_KEY || '',
+      deepseek: import.meta.env.VITE_DEEPSEEK_API_KEY || '',
+      gemini: import.meta.env.VITE_GEMINI_API_KEY || '',
     }
-    
-    if (lastUserMessage.includes('explain')) {
-      return `This code demonstrates **React Hooks** pattern with several key concepts:
+    return keyMap[provider]
+  }
 
-1. **useState**: Manages local component state
-2. **useCallback**: Memoizes functions to prevent unnecessary re-renders
-3. **useEffect**: Handles side effects and lifecycle
+  const chat = useCallback(
+    async (messages: ChatMessage[]): Promise<string> => {
+      setIsLoading(true)
+      setError(null)
 
-The component follows the "Presentational vs Container" pattern, separating logic from UI.`;
-    }
-    
-    if (lastUserMessage.includes('test')) {
-      return `Here's a comprehensive test suite for your component:
+      const apiKey = getApiKey()
+      if (!apiKey) {
+        setError(
+          `API key not set for ${provider}. Set VITE_${provider.toUpperCase()}_API_KEY in .env`,
+        )
+        setIsLoading(false)
+        return `[${provider.toUpperCase()} API key not configured]`
+      }
 
-import { render, screen, fireEvent } from '@testing-library/react';
-import Component from './Component';
+      const config = PROVIDERS[provider]
+      let response: Response
 
-describe('Component', () => {
-  it('renders without crashing', () => {
-    render(<Component />);
-  });
-  
-  it('handles user interaction', () => {
-    render(<Component />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByText('Clicked!')).toBeInTheDocument();
-  });
-});`;
-    }
-    
-    return `I understand you're asking about "${lastUserMessage.substring(0, 50)}...".
+      try {
+        if (provider === 'gemini') {
+          const contents = messages.map((msg) => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }],
+          }))
 
-This is a simulated response since the AI provider requires API keys to be configured. In a production environment, this would connect to MiniMax, DeepSeek, or Gemini for real AI responses.
+          response = await fetch(
+            `${config.baseUrl}/models/${config.model}:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents }),
+            },
+          )
+        } else {
+          response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: config.model,
+              messages: messages.map((msg) => ({ role: msg.role, content: msg.content })),
+              temperature: 0.7,
+              max_tokens: 4096,
+            }),
+          })
+        }
 
-To enable real AI features:
-1. Set VITE_MINIMAX_API_KEY in your environment
-2. Set VITE_DEEPSEEK_API_KEY for fallback
-3. Restart the development server
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error?.message || `HTTP ${response.status}`)
+        }
 
-Is there anything specific about your code you'd like me to help with?`;
-  }, []);
-  
-  return { chat, isLoading, error };
+        const data = await response.json()
+        let content = ''
+
+        if (provider === 'gemini') {
+          content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        } else {
+          content = data.choices?.[0]?.message?.content || ''
+        }
+
+        setIsLoading(false)
+        return content
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        setError(message)
+
+        // Try fallback to deepseek if minimax fails
+        if (provider === 'minimax') {
+          const oldProvider = provider
+          try {
+            const tempMessages = messages.map((msg) => ({ ...msg }))
+            const result = await chatWithProvider(tempMessages, 'deepseek')
+            return result
+          } catch {
+            // Fallback failed, try gemini
+            try {
+              const tempMessages = messages.map((msg) => ({ ...msg }))
+              const result = await chatWithProvider(tempMessages, 'gemini')
+              return result
+            } catch {
+              setIsLoading(false)
+              return `[Error: ${message}]`
+            }
+          }
+        }
+
+        setIsLoading(false)
+        return `[Error: ${message}]`
+      }
+    },
+    [provider],
+  )
+
+  return { chat, isLoading, error, provider, setProvider }
+}
+
+async function chatWithProvider(messages: ChatMessage[], provider: Provider): Promise<string> {
+  const keyMap: Record<Provider, string> = {
+    minimax: import.meta.env.VITE_MINIMAX_API_KEY || '',
+    deepseek: import.meta.env.VITE_DEEPSEEK_API_KEY || '',
+    gemini: import.meta.env.VITE_GEMINI_API_KEY || '',
+  }
+
+  const config = PROVIDERS[provider]
+  const apiKey = keyMap[provider]
+
+  if (!apiKey) {
+    throw new Error(`API key not set for ${provider}`)
+  }
+
+  let response: Response
+
+  if (provider === 'gemini') {
+    const contents = messages.map((msg) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }],
+    }))
+
+    response = await fetch(
+      `${config.baseUrl}/models/${config.model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents }),
+      },
+    )
+  } else {
+    response = await fetch(`${config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: messages.map((msg) => ({ role: msg.role, content: msg.content })),
+        temperature: 0.7,
+        max_tokens: 4096,
+      }),
+    })
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.error?.message || `HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  if (provider === 'gemini') {
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  }
+  return data.choices?.[0]?.message?.content || ''
 }

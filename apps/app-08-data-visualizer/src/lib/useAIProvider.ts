@@ -1,36 +1,190 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react'
 
-export function useAIProvider() {
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const chat = useCallback(async (messages: { role: string; content: string }[]): Promise<string> => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    
-    const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content || '';
-    
-    return `**Data Analysis Insights:**
+const PROVIDERS = {
+  minimax: {
+    baseUrl: 'https://api.minimax.chat/v1',
+    model: 'minimax-abab6.5-chat',
+  },
+  deepseek: {
+    baseUrl: 'https://api.deepseek.com',
+    model: 'deepseek-chat',
+  },
+  gemini: {
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    model: 'gemini-2.0-flash-exp',
+  },
+} as const
 
-Dataset analyzed: ${lastUserMessage.substring(0, 50)}...
+type Provider = keyof typeof PROVIDERS
 
-**Key Findings:**
-1. Strong positive correlation between variables X and Y
-2. Outliers detected in 3 data points
-3. Trend shows consistent growth over time
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
 
-**Visualization Recommendations:**
-- Line chart for time series data
-- Scatter plot for correlation analysis
-- Bar chart for categorical comparisons
+export function useAIProvider(defaultProvider: Provider = 'minimax') {
+  const [provider, setProvider] = useState<Provider>(defaultProvider)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-**Metrics:**
-- Average: 42.5
-- Median: 38.0
-- Std Dev: 12.3
+  const getApiKey = () => {
+    const keyMap: Record<Provider, string> = {
+      minimax: import.meta.env.VITE_MINIMAX_API_KEY || '',
+      deepseek: import.meta.env.VITE_DEEPSEEK_API_KEY || '',
+      gemini: import.meta.env.VITE_GEMINI_API_KEY || '',
+    }
+    return keyMap[provider]
+  }
 
-Configure VITE_MINIMAX_API_KEY for AI-powered data analysis.`;
-  }, []);
-  
-  return { chat, isLoading };
+  const chat = useCallback(
+    async (messages: ChatMessage[]): Promise<string> => {
+      setIsLoading(true)
+      setError(null)
+
+      const apiKey = getApiKey()
+      if (!apiKey) {
+        setError(
+          `API key not set for ${provider}. Set VITE_${provider.toUpperCase()}_API_KEY in .env`,
+        )
+        setIsLoading(false)
+        return `[${provider.toUpperCase()} API key not configured]`
+      }
+
+      const config = PROVIDERS[provider]
+
+      try {
+        let response: Response
+
+        if (provider === 'gemini') {
+          const contents = messages.map((msg) => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }],
+          }))
+
+          response = await fetch(
+            `${config.baseUrl}/models/${config.model}:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents }),
+            },
+          )
+        } else {
+          response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: config.model,
+              messages: messages.map((msg) => ({ role: msg.role, content: msg.content })),
+              temperature: 0.7,
+              max_tokens: 4096,
+            }),
+          })
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error?.message || `HTTP ${response.status}`)
+        }
+
+        const data = await response.json()
+        let content = ''
+
+        if (provider === 'gemini') {
+          content = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        } else {
+          content = data.choices?.[0]?.message?.content || ''
+        }
+
+        setIsLoading(false)
+        return content
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        setError(message)
+
+        if (provider === 'minimax') {
+          try {
+            const result = await chatWithProvider(messages, 'deepseek')
+            return result
+          } catch {
+            try {
+              const result = await chatWithProvider(messages, 'gemini')
+              return result
+            } catch {
+              setIsLoading(false)
+              return `[Error: ${message}]`
+            }
+          }
+        }
+
+        setIsLoading(false)
+        return `[Error: ${message}]`
+      }
+    },
+    [provider],
+  )
+
+  return { chat, isLoading, error, provider, setProvider }
+}
+
+async function chatWithProvider(messages: ChatMessage[], provider: Provider): Promise<string> {
+  const keyMap: Record<Provider, string> = {
+    minimax: import.meta.env.VITE_MINIMAX_API_KEY || '',
+    deepseek: import.meta.env.VITE_DEEPSEEK_API_KEY || '',
+    gemini: import.meta.env.VITE_GEMINI_API_KEY || '',
+  }
+
+  const config = PROVIDERS[provider]
+  const apiKey = keyMap[provider]
+
+  if (!apiKey) {
+    throw new Error(`API key not set for ${provider}`)
+  }
+
+  let response: Response
+
+  if (provider === 'gemini') {
+    const contents = messages.map((msg) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }],
+    }))
+
+    response = await fetch(
+      `${config.baseUrl}/models/${config.model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents }),
+      },
+    )
+  } else {
+    response = await fetch(`${config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: messages.map((msg) => ({ role: msg.role, content: msg.content })),
+        temperature: 0.7,
+        max_tokens: 4096,
+      }),
+    })
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.error?.message || `HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  if (provider === 'gemini') {
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  }
+  return data.choices?.[0]?.message?.content || ''
 }
