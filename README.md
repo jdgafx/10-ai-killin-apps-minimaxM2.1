@@ -4,18 +4,18 @@ A collection of 10 AI-powered applications built with React, TypeScript, and Vit
 
 ## 🚀 Live Demo URLs
 
-| App                | URL                                    |
-| ------------------ | -------------------------------------- |
-| AI Code Reviewer   | https://ai-code-reviewer-th9.pages.dev |
-| Document Chat      | https://document-chat.pages.dev        |
-| Image Generator    | https://image-generator-a7n.pages.dev  |
-| Voice Assistant    | https://voice-assistant-ee0.pages.dev  |
-| Code Explainer     | https://code-explainer-bje.pages.dev   |
-| Test Generator     | https://test-generator.pages.dev       |
-| API Integrator     | https://api-integrator.pages.dev       |
-| Data Visualizer    | https://data-visualizer-e15.pages.dev  |
-| Autonomous Agent   | https://autonomous-agent.pages.dev     |
-| RAG Knowledge Base | https://rag-knowledge-base.pages.dev   |
+| App                | URL                                  |
+| ------------------ | ------------------------------------ |
+| AI Code Reviewer   | https://ai-code-reviewer.pages.dev   |
+| Document Chat      | https://document-chat.pages.dev      |
+| Image Generator    | https://image-generator.pages.dev    |
+| Voice Assistant    | https://voice-assistant.pages.dev    |
+| Code Explainer     | https://code-explainer.pages.dev     |
+| Test Generator     | https://test-generator.pages.dev     |
+| API Integrator     | https://api-integrator.pages.dev     |
+| Data Visualizer    | https://data-visualizer.pages.dev    |
+| Autonomous Agent   | https://autonomous-agent.pages.dev   |
+| RAG Knowledge Base | https://rag-knowledge-base.pages.dev |
 
 Auto-deploy enabled via GitHub Actions → Cloudflare Pages
 
