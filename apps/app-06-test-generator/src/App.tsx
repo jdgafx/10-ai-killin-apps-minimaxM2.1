@@ -1,280 +1,326 @@
-import React, { useState, useCallback } from 'react';
-import { useAIProvider } from '@packages/ai-providers';
-import { Card, Button, Input, LoadingSpinner, ErrorAlert } from '@packages/shared-ui';
+import React, { useState } from 'react';
 import { 
-  Beaker, 
-  FileCode, 
-  CheckCircle, 
-  XCircle, 
-  Copy, 
-  Download,
-  Play,
-  Settings,
-  Zap
+  TestTube2, 
+  Sparkles, 
+  ArrowRight,
+  CheckCircle2,
+  FileCode,
+  Zap,
+  Shield,
+  Clock,
+  GraduationCap,
+  Target,
+  Code2,
+  Layers
 } from 'lucide-react';
+import { Card, Button, Input, LoadingSpinner, ErrorAlert } from './lib/components';
 
-interface TestCase {
-  name: string;
-  input: string;
-  expected: string;
-  description: string;
-}
-
-interface TestSuite {
-  framework: string;
-  code: string;
-  testCases: TestCase[];
-  coverage: {
-    statements: number;
-    branches: number;
-    functions: number;
-    lines: number;
-  };
-}
-
-const FRAMEWORKS = [
-  { id: 'jest', name: 'Jest', language: 'javascript' },
-  { id: 'vitest', name: 'Vitest', language: 'javascript' },
-  { id: 'pytest', name: 'Pytest', language: 'python' },
-  { id: 'unittest', name: 'unittest', language: 'python' },
-  { id: 'mocha', name: 'Mocha', language: 'javascript' },
-  { id: 'junit', name: 'JUnit', language: 'java' },
-];
-
-const LANGUAGES = [
-  { id: 'javascript', name: 'JavaScript' },
-  { id: 'typescript', name: 'TypeScript' },
-  { id: 'python', name: 'Python' },
-  { id: 'java', name: 'Java' },
-];
-
-function App() {
-  const [code, setCode] = useState(`function add(a, b) {
-  return a + b;
-}
-
-function multiply(a, b) {
-  return a * b;
-}
-
-module.exports = { add, multiply };`);
-
-  const [language, setLanguage] = useState('javascript');
-  const [framework, setFramework] = useState('jest');
-  const [testSuite, setTestSuite] = useState<TestSuite | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const { chat, isLoading } = useAIProvider();
-
-  const generateTests = useCallback(async () => {
-    if (!code.trim()) {
-      setError('Please enter some code to generate tests for');
-      return;
-    }
-
-    setIsGenerating(true);
-    setError(null);
-    setTestSuite(null);
-
-    try {
-      const systemPrompt = `You are an expert test generator. Generate comprehensive unit tests for the provided code.
-Return a JSON response with this exact structure:
-{
-  "framework": "${framework}",
-  "code": "<complete test code>",
-  "testCases": [
-    {
-      "name": "<test name>",
-      "input": "<test input>",
-      "expected": "<expected output>",
-      "description": "<what this tests>"
-    }
-  ],
-  "coverage": {
-    "statements": <percentage>,
-    "branches": <percentage>,
-    "functions": <percentage>,
-    "lines": <percentage>
-  }
-}
-
-Generate tests for:
-- Happy path (normal inputs)
-- Edge cases (empty, null, undefined, zero)
-- Error conditions (invalid inputs)
-- Boundary conditions
-
-Make tests comprehensive with clear descriptions.`;
-
-      const result = await chat([
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Language: ${language}\n\nCode to test:\n${code}` },
-      ]);
-
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        setTestSuite(parsed);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate tests');
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [code, language, framework, chat]);
-
-  const copyTests = useCallback(() => {
-    if (testSuite) {
-      navigator.clipboard.writeText(testSuite.code);
-    }
-  }, [testSuite]);
-
-  const downloadTests = useCallback(() => {
-    if (!testSuite) return;
-    const blob = new Blob([testSuite.code], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `test.${framework === 'pytest' || framework === 'unittest' ? 'py' : 'test.js'}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [testSuite, framework]);
-
+function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-teal-600 rounded-lg">
-              <Beaker className="h-6 w-6 text-white" />
+    <div className="min-h-screen bg-gray-950 text-white overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 via-blue-900/20 to-indigo-900/20"></div>
+        <div className="absolute top-0 right-1/4 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="relative z-10 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl">
+                <TestTube2 className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                AI Test Generator
+              </span>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Test Generator</h1>
-              <p className="text-sm text-gray-500">Automated unit test generation</p>
+            <div className="flex items-center gap-4">
+              <a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">Features</a>
+              <a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm">How it Works</a>
+              <Button variant="primary" size="sm">
+                Try for Free
+              </Button>
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <select
-              value={framework}
-              onChange={(e) => setFramework(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {FRAMEWORKS.map((fw) => (
-                <option key={fw.id} value={fw.id}>{fw.name}</option>
-              ))}
-            </select>
-            <Button onClick={generateTests} loading={isGenerating} disabled={!code.trim()}>
-              <Zap className="h-4 w-4 mr-2" />
-              Generate Tests
-            </Button>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {error && (
-          <div className="mb-6">
-            <ErrorAlert message={error} onDismiss={() => setError(null)} />
+      {/* Hero Section */}
+      <section className="relative z-10 pt-24 pb-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-cyan-400 text-sm mb-8">
+              <Sparkles className="h-4 w-4" />
+              <span>AI-Powered Testing</span>
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-white via-cyan-200 to-blue-200 bg-clip-text text-transparent">
+                Generate Tests
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                10x Faster
+              </span>
+            </h1>
+            
+            <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Paste your code and instantly generate comprehensive unit tests. Cover edge cases, 
+              improve code quality, and ship with confidence.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button size="lg" className="group">
+                Start Testing
+                <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button variant="outline" size="lg">
+                View Documentation
+              </Button>
+            </div>
           </div>
-        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Code Input */}
-          <Card className="h-[calc(100vh-200px)] flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-800">Source Code</h2>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="px-2 py-1 text-sm border border-gray-300 rounded"
-              >
-                {LANGUAGES.map((lang) => (
-                  <option key={lang.id} value={lang.id}>{lang.name}</option>
-                ))}
-              </select>
-            </div>
-            <textarea
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="Paste your code here..."
-              className="flex-1 w-full p-4 font-mono text-sm bg-gray-900 text-gray-100 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              spellCheck={false}
-            />
-          </Card>
-
-          {/* Generated Tests */}
-          <Card className="h-[calc(100vh-200px)] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-800">Generated Tests</h2>
-              {testSuite && (
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={copyTests}>
-                    <Copy className="h-4 w-4 mr-1" />
-                    Copy
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={downloadTests}>
-                    <Download className="h-4 w-4 mr-1" />
-                    Download
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {isGenerating ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <LoadingSpinner size="lg" />
-                  <p className="mt-4">Generating tests...</p>
-                </div>
-              ) : testSuite ? (
-                <div className="space-y-4">
-                  {/* Coverage */}
-                  <div className="grid grid-cols-4 gap-2">
-                    {Object.entries(testSuite.coverage).map(([key, value]) => (
-                      <div key={key} className="p-3 bg-gray-50 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-gray-800">{value}%</p>
-                        <p className="text-xs text-gray-500 capitalize">{key}</p>
-                      </div>
-                    ))}
+          {/* Code Demo */}
+          <div className="mt-20 max-w-5xl mx-auto">
+            <div className="bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
                   </div>
-
-                  {/* Test Code */}
-                  <div className="relative">
-                    <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg text-sm overflow-x-auto max-h-64">
-                      <code>{testSuite.code}</code>
-                    </pre>
+                  <span className="text-gray-400 text-sm">test-generator.ts</span>
+                </div>
+                <span className="text-cyan-400 text-sm flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  5 tests generated
+                </span>
+              </div>
+              <div className="p-6 grid md:grid-cols-2 gap-6">
+                <div>
+                  <div className="text-xs text-gray-500 mb-2 uppercase tracking-wider">Your Code</div>
+                  <pre className="text-sm font-mono text-gray-300 overflow-x-auto">
+                    <code>{`function add(a, b) {
+  return a + b;
+}`}</code>
+                  </pre>
+                </div>
+                <div>
+                  <div className="text-xs text-blue-400 mb-2 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="h-3 w-3" />
+                    Generated Tests
                   </div>
-
-                  {/* Test Cases */}
-                  <div>
-                    <h3 className="font-medium text-gray-800 mb-2">Test Cases ({testSuite.testCases.length})</h3>
-                    <div className="space-y-2">
-                      {testSuite.testCases.map((tc, i) => (
-                        <div key={i} className="p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-2 mb-1">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span className="font-medium text-gray-800">{tc.name}</span>
-                          </div>
-                          <p className="text-sm text-gray-600">{tc.description}</p>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5" />
+                        <div>
+                          <div className="text-sm text-cyan-400 font-medium">✓ Positive numbers</div>
+                          <div className="text-xs text-gray-400 mt-1">add(2, 3) → 5</div>
                         </div>
-                      ))}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5" />
+                        <div>
+                          <div className="text-sm text-cyan-400 font-medium">✓ Negative numbers</div>
+                          <div className="text-xs text-gray-400 mt-1">add(-1, 5) → 4</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-cyan-400 mt-0.5" />
+                        <div>
+                          <div className="text-sm text-cyan-400 font-medium">✓ Zero handling</div>
+                          <div className="text-xs text-gray-400 mt-1">add(0, 0) → 0</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <Beaker className="h-16 w-16 mb-4 opacity-50" />
-                  <p>Paste your code and click "Generate Tests" to get started</p>
-                </div>
-              )}
+              </div>
             </div>
-          </Card>
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Stats */}
+      <section className="relative z-10 py-16 border-y border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { value: '10M+', label: 'Tests Generated' },
+              { value: '99.9%', label: 'Coverage Rate' },
+              { value: '5x', label: 'Faster Testing' },
+              { value: '50+', label: 'Languages' },
+            ].map((stat, i) => (
+              <div key={i} className="text-center">
+                <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-2">
+                  {stat.value}
+                </div>
+                <div className="text-gray-400 text-sm">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="relative z-10 py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Why AI Test Generator?</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              The most comprehensive AI-powered testing solution
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: <Zap className="h-6 w-6" />,
+                title: 'Instant Generation',
+                description: 'Get comprehensive test suites in seconds, not hours.',
+                gradient: 'from-cyan-500 to-blue-500'
+              },
+              {
+                icon: <Target className="h-6 w-6" />,
+                title: 'Edge Case Coverage',
+                description: 'Automatically covers edge cases you might have missed.',
+                gradient: 'from-blue-500 to-indigo-500'
+              },
+              {
+                icon: <FileCode className="h-6 w-6" />,
+                title: 'Multi-Framework',
+                description: 'Supports Jest, Vitest, Mocha, Pytest, and more.',
+                gradient: 'from-indigo-500 to-violet-500'
+              },
+              {
+                icon: <Shield className="h-6 w-6" />,
+                title: 'Type Safe',
+                description: 'Generates type-safe tests for TypeScript projects.',
+                gradient: 'from-green-500 to-emerald-500'
+              },
+              {
+                icon: <Clock className="h-6 w-6" />,
+                title: 'Save Time',
+                description: 'Save 80% of testing time with AI-powered generation.',
+                gradient: 'from-yellow-500 to-orange-500'
+              },
+              {
+                icon: <GraduationCap className="h-6 w-6" />,
+                title: 'Learn Testing',
+                description: 'Learn best practices from generated test patterns.',
+                gradient: 'from-purple-500 to-pink-500'
+              },
+            ].map((feature, i) => (
+              <div key={i} className="group p-6 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all duration-300">
+                <div className={`inline-flex p-3 rounded-xl bg-gradient-to-r ${feature.gradient} mb-4`}>
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-gray-400">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it Works */}
+      <section id="how-it-works" className="relative z-10 py-24 bg-gradient-to-b from-transparent via-cyan-900/10 to-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Start testing in three simple steps
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              {
+                step: '01',
+                title: 'Paste Your Code',
+                description: 'Copy and paste your function or module',
+                icon: <FileCode className="h-8 w-8" />
+              },
+              {
+                step: '02',
+                title: 'AI Analysis',
+                description: 'Our AI analyzes code structure and logic',
+                icon: <Sparkles className="h-8 w-8" />
+              },
+              {
+                step: '03',
+                title: 'Get Tests',
+                description: 'Receive comprehensive test suite instantly',
+                icon: <TestTube2 className="h-8 w-8" />
+              },
+            ].map((item, i) => (
+              <div key={i} className="relative text-center">
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 blur-xl opacity-30 rounded-full"></div>
+                  <div className="relative inline-flex items-center justify-center w-20 h-20 bg-white/10 border border-white/20 rounded-2xl">
+                    {item.icon}
+                  </div>
+                </div>
+                <div className="text-cyan-400 text-sm font-mono mb-2">{item.step}</div>
+                <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                <p className="text-gray-400 text-sm">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="relative z-10 py-24">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative p-12 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-3xl overflow-hidden">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
+            <div className="relative text-center">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Test Smarter?</h2>
+              <p className="text-cyan-100 mb-8 max-w-xl mx-auto">
+                Join developers who ship with confidence using AI-powered tests.
+              </p>
+              <Button size="lg" variant="secondary" className="group">
+                Get Started Free
+                <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="relative z-10 py-12 border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl">
+                <TestTube2 className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-bold">AI Test Generator</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-gray-400">
+              <a href="#" className="hover:text-white transition-colors">Privacy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms</a>
+              <a href="#" className="hover:text-white transition-colors">Contact</a>
+            </div>
+            <div className="text-gray-500 text-sm">
+              © 2025 All rights reserved
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
 
-export default App;
+export default LandingPage;

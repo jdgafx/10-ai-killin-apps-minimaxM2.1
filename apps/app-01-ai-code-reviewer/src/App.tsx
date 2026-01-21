@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useAIProvider } from '@packages/ai-providers';
-import { Card, Button, Input, LoadingSpinner, ErrorAlert } from '@packages/shared-ui';
+import { useAIProvider } from './lib/useAIProvider';
+import { Card, Button, Input, LoadingSpinner, ErrorAlert } from './lib/components';
 import { 
   Code2, 
   AlertTriangle, 

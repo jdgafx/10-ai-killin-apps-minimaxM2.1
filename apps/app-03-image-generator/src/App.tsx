@@ -1,288 +1,333 @@
-import React, { useState, useCallback } from 'react';
-import { minimaxTextToImage } from '@packages/ai-providers';
-import { Card, Button, Input, LoadingSpinner, ErrorAlert } from '@packages/shared-ui';
-import { Image, Download, Palette, Maximize2, Zap, History, Trash2, Copy } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Image as ImageIcon, 
+  Sparkles, 
+  Palette, 
+  Zap,
+  Download,
+  Share2,
+  Wand2,
+  Layers,
+  ArrowRight,
+  DownloadCloud,
+  RefreshCw,
+  Brush
+} from 'lucide-react';
+import { Card, Button, Input, LoadingSpinner, ErrorAlert } from './lib/components';
 
-interface GeneratedImage {
-  id: string;
-  url: string;
-  prompt: string;
-  style: string;
-  aspectRatio: string;
-  createdAt: Date;
-}
-
-const STYLES = [
-  { id: 'realistic', name: 'Realistic', icon: '📷' },
-  { id: 'anime', name: 'Anime', icon: '🎨' },
-  { id: 'abstract', name: 'Abstract', icon: '🎭' },
-  { id: 'digital-art', name: 'Digital Art', icon: '✨' },
-  { id: 'oil-painting', name: 'Oil Painting', icon: '🖼️' },
-  { id: 'watercolor', name: 'Watercolor', icon: '💧' },
-  { id: 'cyberpunk', name: 'Cyberpunk', icon: '🤖' },
-  { id: 'fantasy', name: 'Fantasy', icon: '🐉' },
-];
-
-const ASPECT_RATIOS = [
-  { id: '1:1', name: 'Square', label: '1:1' },
-  { id: '16:9', name: 'Landscape', label: '16:9' },
-  { id: '4:3', name: 'Standard', label: '4:3' },
-  { id: '2:3', name: 'Portrait', label: '2:3' },
-  { id: '9:16', name: 'Story', label: '9:16' },
-];
-
-function App() {
+function LandingPage() {
   const [prompt, setPrompt] = useState('');
-  const [style, setStyle] = useState('realistic');
-  const [aspectRatio, setAspectRatio] = useState('1:1');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [images, setImages] = useState<GeneratedImage[]>([]);
-  const [currentImage, setCurrentImage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<string[]>([]);
 
-  const generateImage = useCallback(async () => {
-    if (!prompt.trim()) {
-      setError('Please enter a prompt');
-      return;
-    }
-
-    setIsGenerating(true);
-    setError(null);
-    setCurrentImage(null);
-
-    try {
-      const fullPrompt = `${prompt}. Style: ${style}`.trim();
-      const urls = await minimaxTextToImage(fullPrompt, {
-        aspectRatio,
-        n: 1,
-      });
-
-      const newImage: GeneratedImage = {
-        id: crypto.randomUUID(),
-        url: urls[0],
-        prompt,
-        style,
-        aspectRatio,
-        createdAt: new Date(),
-      };
-
-      setImages((prev) => [newImage, ...prev]);
-      setCurrentImage(urls[0]);
-      setHistory((prev) => [prompt, ...prev.filter((p) => p !== prompt)].slice(0, 10));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate image');
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [prompt, style, aspectRatio]);
-
-  const downloadImage = useCallback(async (url: string, prompt: string) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `generated-${prompt.substring(0, 30).replace(/\s+/g, '-')}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      setError('Failed to download image');
-    }
-  }, []);
-
-  const copyPrompt = useCallback((text: string) => {
-    navigator.clipboard.writeText(text);
-  }, []);
-
-  const usePrompt = useCallback((text: string) => {
-    setPrompt(text);
-  }, []);
+  const generatedImages = [
+    { id: 1, prompt: 'Cyberpunk city at night', style: 'Cinematic', gradient: 'from-purple-500 to-pink-500' },
+    { id: 2, prompt: 'Peaceful mountain landscape', style: 'Oil Painting', gradient: 'from-green-500 to-teal-500' },
+    { id: 3, prompt: 'Abstract geometric patterns', style: 'Minimalist', gradient: 'from-orange-500 to-red-500' },
+    { id: 4, prompt: 'Portrait of a warrior', style: 'Digital Art', gradient: 'from-blue-500 to-indigo-500' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg">
-              <Image className="h-6 w-6 text-white" />
+    <div className="min-h-screen bg-gray-950 text-white overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-900/20 via-purple-900/20 to-violet-900/20"></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-pink-500/5 to-violet-500/5 rounded-full blur-3xl animate-spin" style={{ animationDuration: '30s' }}></div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="relative z-10 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-pink-500 to-violet-500 rounded-xl">
+                <ImageIcon className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-transparent">
+                AI Image Generator
+              </span>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">AI Image Generator</h1>
-              <p className="text-sm text-gray-500">Create stunning images with AI</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {error && (
-          <div className="mb-6">
-            <ErrorAlert message={error} onDismiss={() => setError(null)} />
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Controls */}
-          <Card className="lg:col-span-1 h-fit">
-            <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Generate Image
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prompt</label>
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe the image you want to create..."
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">{prompt.length}/500 characters</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Style</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {STYLES.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setStyle(s.id)}
-                      className={`p-2 rounded-lg text-center transition-all ${
-                        style === s.id
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                      title={s.name}
-                    >
-                      <span className="text-xl">{s.icon}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Aspect Ratio</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {ASPECT_RATIOS.map((ar) => (
-                    <button
-                      key={ar.id}
-                      onClick={() => setAspectRatio(ar.id)}
-                      className={`p-2 rounded-lg text-center transition-all ${
-                        aspectRatio === ar.id
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                      title={ar.name}
-                    >
-                      <span className="text-xs font-medium">{ar.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <Button onClick={generateImage} loading={isGenerating} disabled={!prompt.trim()} className="w-full">
-                <Zap className="h-4 w-4 mr-2" />
-                Generate
+            <div className="flex items-center gap-4">
+              <a href="#gallery" className="text-gray-400 hover:text-white transition-colors text-sm">Gallery</a>
+              <a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">Features</a>
+              <Button variant="primary" size="sm">
+                Create Art
               </Button>
             </div>
-
-            {/* History */}
-            {history.length > 0 && (
-              <div className="mt-6 pt-4 border-t">
-                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <History className="h-4 w-4" />
-                  Recent Prompts
-                </h3>
-                <div className="space-y-1">
-                  {history.map((h, i) => (
-                    <button
-                      key={i}
-                      onClick={() => usePrompt(h)}
-                      className="w-full text-left text-sm text-gray-600 p-2 rounded hover:bg-gray-100 truncate"
-                    >
-                      {h}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
-
-          {/* Preview */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="min-h-[400px] flex items-center justify-center">
-              {isGenerating ? (
-                <div className="text-center">
-                  <LoadingSpinner size="lg" />
-                  <p className="mt-4 text-gray-500">Generating your image...</p>
-                </div>
-              ) : currentImage ? (
-                <div className="w-full">
-                  <img
-                    src={currentImage}
-                    alt="Generated"
-                    className="w-full rounded-lg shadow-lg"
-                  />
-                  <div className="mt-4 flex gap-2 justify-center">
-                    <Button onClick={() => downloadImage(currentImage, prompt)}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                    <Button variant="outline" onClick={() => copyPrompt(prompt)}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy Prompt
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-gray-400">
-                  <Image className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p>Enter a prompt and click Generate to create an image</p>
-                </div>
-              )}
-            </Card>
-
-            {/* Gallery */}
-            {images.length > 0 && (
-              <Card>
-                <h2 className="font-semibold text-gray-800 mb-4">Generated Images</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {images.map((img) => (
-                    <div
-                      key={img.id}
-                      onClick={() => setCurrentImage(img.url)}
-                      className="relative group cursor-pointer"
-                    >
-                      <img
-                        src={img.url}
-                        alt={img.prompt}
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); downloadImage(img.url, img.prompt); }}
-                          className="p-2 bg-white rounded-full hover:bg-gray-100"
-                        >
-                          <Download className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1 truncate">{img.prompt}</p>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
           </div>
         </div>
-      </main>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative z-10 pt-24 pb-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-pink-500/10 border border-pink-500/20 rounded-full text-pink-400 text-sm mb-8">
+              <Sparkles className="h-4 w-4" />
+              <span>Powered by MiniMax AI</span>
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-white via-pink-200 to-violet-200 bg-clip-text text-transparent">
+                Transform Your Imagination
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-transparent">
+                Into Stunning Artwork
+              </span>
+            </h1>
+            
+            <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Create breathtaking images with simple text prompts. From photorealistic landscapes 
+              to abstract art — your creativity has no limits.
+            </p>
+            
+            {/* Generator Input */}
+            <div className="max-w-2xl mx-auto">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-violet-500 to-indigo-500 rounded-2xl opacity-50 group-hover:opacity-75 blur transition-all duration-300"></div>
+                <div className="relative flex items-center gap-4 bg-gray-900/90 backdrop-blur-xl rounded-2xl p-2">
+                  <input
+                    type="text"
+                    placeholder="Describe your image... (e.g., 'A sunset over mountains with vibrant colors')"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="flex-1 px-6 py-4 bg-transparent text-white placeholder-gray-500 focus:outline-none text-lg"
+                  />
+                  <Button size="lg" disabled={!prompt || isGenerating}>
+                    {isGenerating ? (
+                      <>
+                        <LoadingSpinner className="h-5 w-5 mr-2" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5 mr-2" />
+                        Generate
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+                <span className="text-gray-500 text-sm">Popular prompts:</span>
+                {['Cyberpunk city', 'Oil painting portrait', 'Fantasy landscape', 'Minimalist abstract'].map((tag) => (
+                  <button
+                    key={tag}
+                    className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                    onClick={() => setPrompt(tag)}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Gallery Preview */}
+          <div id="gallery" className="mt-24">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold">Recent Creations</h2>
+              <a href="#" className="text-pink-400 hover:text-pink-300 text-sm flex items-center gap-1">
+                View all <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {generatedImages.map((img) => (
+                <div key={img.id} className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${img.gradient} opacity-80`}></div>
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-all"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform">
+                    <p className="text-sm font-medium text-white mb-1">{img.prompt}</p>
+                    <span className="text-xs text-gray-300 bg-white/20 px-2 py-0.5 rounded-full">{img.style}</span>
+                  </div>
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors">
+                      <DownloadCloud className="h-4 w-4 text-white" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="relative z-10 py-16 border-y border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { value: '50M+', label: 'Images Created' },
+              { value: '500K+', label: 'Happy Users' },
+              { value: '10s', label: 'Avg Generation' },
+              { value: '99.9%', label: 'Uptime' },
+            ].map((stat, i) => (
+              <div key={i} className="text-center">
+                <div className="text-4xl font-bold bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-transparent mb-2">
+                  {stat.value}
+                </div>
+                <div className="text-gray-400 text-sm">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="relative z-10 py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Powerful Features</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Everything you need to create stunning AI-generated art
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: <Wand2 className="h-6 w-6" />,
+                title: 'Text to Image',
+                description: 'Describe your vision and watch it come to life in seconds with our advanced AI.',
+                gradient: 'from-pink-500 to-rose-500'
+              },
+              {
+                icon: <Palette className="h-6 w-6" />,
+                title: 'Multiple Styles',
+                description: 'Choose from photorealistic, oil painting, digital art, anime, and many more styles.',
+                gradient: 'from-violet-500 to-purple-500'
+              },
+              {
+                icon: <Layers className="h-6 w-6" />,
+                title: 'High Resolution',
+                description: 'Generate images up to 4K resolution with incredible detail and clarity.',
+                gradient: 'from-indigo-500 to-blue-500'
+              },
+              {
+                icon: <RefreshCw className="h-6 w-6" />,
+                title: 'Variations',
+                description: 'Generate multiple variations of any image and choose your favorite.',
+                gradient: 'from-cyan-500 to-teal-500'
+              },
+              {
+                icon: <Zap className="h-6 w-6" />,
+                title: 'Lightning Fast',
+                description: 'Get your images in under 10 seconds. No waiting, just creating.',
+                gradient: 'from-yellow-500 to-orange-500'
+              },
+              {
+                icon: <DownloadCloud className="h-6 w-6" />,
+                title: 'Easy Export',
+                description: 'Download in any format — PNG, JPG, WebP, or SVG. Share instantly.',
+                gradient: 'from-green-500 to-emerald-500'
+              },
+            ].map((feature, i) => (
+              <div key={i} className="group p-6 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all duration-300">
+                <div className={`inline-flex p-3 rounded-xl bg-gradient-to-r ${feature.gradient} mb-4`}>
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-gray-400">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it Works */}
+      <section className="relative z-10 py-24 bg-gradient-to-b from-transparent via-pink-900/10 to-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Create stunning artwork in three simple steps
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              {
+                step: '01',
+                title: 'Describe Your Vision',
+                description: 'Type a detailed description of the image you want to create',
+                icon: <Brush className="h-8 w-8" />
+              },
+              {
+                step: '02',
+                title: 'AI Generation',
+                description: 'Our AI transforms your words into breathtaking artwork',
+                icon: <Sparkles className="h-8 w-8" />
+              },
+              {
+                step: '03',
+                title: 'Download & Share',
+                description: 'Download your creation or share it directly on social media',
+                icon: <DownloadCloud className="h-8 w-8" />
+              },
+            ].map((item, i) => (
+              <div key={i} className="relative text-center">
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-violet-500 blur-xl opacity-30 rounded-full"></div>
+                  <div className="relative inline-flex items-center justify-center w-20 h-20 bg-white/10 border border-white/20 rounded-2xl">
+                    {item.icon}
+                  </div>
+                </div>
+                <div className="text-pink-400 text-sm font-mono mb-2">{item.step}</div>
+                <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                <p className="text-gray-400 text-sm">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="relative z-10 py-24">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative p-12 bg-gradient-to-r from-pink-600 to-violet-600 rounded-3xl overflow-hidden">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
+            <div className="relative text-center">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Create Magic?</h2>
+              <p className="text-pink-100 mb-8 max-w-xl mx-auto">
+                Join millions of creators bringing their imagination to life. 
+                Start generating stunning artwork today.
+              </p>
+              <Button size="lg" variant="secondary" className="group">
+                Start Creating Free
+                <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="relative z-10 py-12 border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-pink-500 to-violet-500 rounded-xl">
+                <ImageIcon className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-bold">AI Image Generator</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-gray-400">
+              <a href="#" className="hover:text-white transition-colors">Privacy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms</a>
+              <a href="#" className="hover:text-white transition-colors">Contact</a>
+            </div>
+            <div className="text-gray-500 text-sm">
+              © 2025 All rights reserved
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
 
-export default App;
+export default LandingPage;

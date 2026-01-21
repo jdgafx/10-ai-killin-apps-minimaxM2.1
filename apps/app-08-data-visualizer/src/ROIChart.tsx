@@ -13,7 +13,7 @@ import {
   Cell
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Zap } from 'lucide-react';
-import { Card } from '@packages/shared-ui';
+import { Card } from './lib/components';
 
 interface ROIDataPoint {
   role: string;
